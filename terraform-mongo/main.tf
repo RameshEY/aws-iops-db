@@ -49,7 +49,7 @@ resource "aws_instance" "mongodb" {
 
   connection {
     user     = "ubuntu"
-    key_file = "{TF_VAR_key_file}"
+    key_file = "{var.key_file}"
   }
 }
 

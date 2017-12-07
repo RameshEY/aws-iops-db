@@ -1,4 +1,4 @@
-variable "TF_VAR_name" {}
+variable "name" {}
 variable "mongodb_version" {}
 variable "mongodb_basedir" {}
 variable "mongodb_conf_logpath" {}
@@ -9,17 +9,18 @@ variable "mongodb_key_s3_object" {}
 variable "ssl_ca_key_s3_object" {}
 variable "ssl_agent_key_s3_object" {}
 variable "ssl_mongod_key_s3_object" {}
-variable "TF_VAR_opsmanager_key_s3_object" {}
-variable "TF_VAR_mongodb_iam_name" {}
-variable "TF_VAR_mongodb_sg_id" {}
-variable "TF_VAR_vpc_id" {}
-variable "TF_VAR_subnet_id" {}
-variable "TF_VAR_opsmanager_subdomain" {}
-variable "TF_VAR_ebs_volume_id" {}
-variable "TF_VAR_route53_zone_id" {}
-variable "TF_VAR_route53_hostname" {}
-variable "TF_VAR_route53_hostname_internal" {}
-variable "TF_VAR_aws_region" {}
+variable "opsmanager_key_s3_object" {}
+variable "mongodb_iam_name" {}
+variable "mongodb_sg_id" {}
+variable "vpc_id" {}
+variable "subnet_id" {}
+variable "opsmanager_subdomain" {}
+variable "ebs_volume_id" {}
+variable "route53_zone_id" {}
+variable "route53_hostname" {}
+variable "route53_hostname_internal" {}
+variable "aws_region" {}
+variable "key_file" {}
 
 variable "ec2_ami_id" {
   default = "ami-fce3c696"
