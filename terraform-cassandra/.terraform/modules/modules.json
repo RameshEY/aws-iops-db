@@ -1,0 +1,1 @@
+{"Modules":[{"Source":"github.com/terraform-community-modules/tf_aws_sg//sg_cassandra","Key":"1.cassandra_security_group;github.com/terraform-community-modules/tf_aws_sg//sg_cassandra","Version":"","Dir":".terraform/modules/e04662d673d922b0db089119e6a964a5","Root":"sg_cassandra"}]}
