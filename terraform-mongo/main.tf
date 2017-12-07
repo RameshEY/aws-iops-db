@@ -49,7 +49,7 @@ resource "aws_instance" "mongodb" {
 
   connection {
     user     = "ubuntu"
-    key_file = "~/.ssh/mongodb.pem"
+    key_file = "{TF_VAR_key_file}"
   }
 }
 
