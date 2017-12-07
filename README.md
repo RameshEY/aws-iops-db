@@ -2,13 +2,14 @@
 
 ## Planned Usage
 
-Macbook$ git clone aws-iops-blog
-Macbook$ cd aws-iops-blog/
-Macbook$ export TF_VAR_key_name="kenzan-scratch"
-Macbook$ export TF_VAR_vpc_name="vpc-abc1234"
-Macbook$ export TF_VAR_subnet_name="subnet-abc1234"
+$ git clone https://github.com/kenzanlabs/aws-iops-db.git
+$ cd aws-iops-blog/
+$ export TF_VAR_key_name="keyname.pem"
+$ export TF_VAR_vpc_name="vpc-abc1234"
+$ export TF_VAR_subnet_name="subnet-abc1234"
 
-Macbook$ bash iops-run-test mongoDB test1,test2,...
+$ bash iops-run-test cassandra test1,test2,...
+$ bash iops-run-test mongoDB test1,test2,...
 provisioning test1
 database: mongoDB
 machine: r4.4xlarge 1TB gp2
@@ -18,6 +19,9 @@ machine: r4.4xlarge 1TB gp2
 run test1..
    \_ $ ycsb load
    \_ $ ycsb run command
+
+...
+
 
 ## LICENSE
 Copyright 2017 Kenzan, LLC <http://kenzan.com>
