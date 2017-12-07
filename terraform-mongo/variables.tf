@@ -1,4 +1,6 @@
 variable "name" {}
+variable "name2" {}
+variable "name3" {}
 variable "mongodb_version" {}
 variable "mongodb_basedir" {}
 variable "mongodb_conf_logpath" {}
@@ -27,7 +29,15 @@ variable "ec2_ami_id" {
 }
 
 variable "ec2_instance_type" {
-  default = "m3.xlarge"
+  default = "r4.4xlarge"
+}
+
+variable "ec2_instance_type2" {
+  default = "i3.4xlarge"
+}
+
+variable "ec2_instance_type3" {
+  default = "r3.4xlarge"
 }
 
 variable "config_ephemeral" {

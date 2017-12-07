@@ -53,6 +53,58 @@ resource "aws_instance" "mongodb" {
   }
 }
 
+resource "aws_instance" "mongodb" {
+  ami                         = "${var.ec2_ami_id}"
+  instance_type               = "${var.ec2_instance_type2}"
+  key_name                    = "mongodb"
+  user_data                   = "${data.template_file.user_data.rendered}"
+  iam_instance_profile        = "${var.mongodb_iam_name}"
+  vpc_security_group_ids      = ["${var.mongodb_sg_id}"]
+  subnet_id                   = "${var.subnet_id}"
+  associate_public_ip_address = true
+
+  root_block_device {
+    volume_size           = 64
+    volume_type           = "gp2"
+    delete_on_termination = true
+  }
+
+  tags {
+    Name = "${var.name2}"
+  }
+
+  connection {
+    user     = "ubuntu"
+    key_file = "{var.key_file}"
+  }
+}
+
+resource "aws_instance" "mongodb" {
+  ami                         = "${var.ec2_ami_id}"
+  instance_type               = "${var.ec2_instance_type3}"
+  key_name                    = "mongodb"
+  user_data                   = "${data.template_file.user_data.rendered}"
+  iam_instance_profile        = "${var.mongodb_iam_name}"
+  vpc_security_group_ids      = ["${var.mongodb_sg_id}"]
+  subnet_id                   = "${var.subnet_id}"
+  associate_public_ip_address = true
+
+  root_block_device {
+    volume_size           = 64
+    volume_type           = "gp2"
+    delete_on_termination = true
+  }
+
+  tags {
+    Name = "${var.name3}"
+  }
+
+  connection {
+    user     = "ubuntu"
+    key_file = "{var.key_file}"
+  }
+}
+
 resource "aws_route53_record" "mongodb" {
   zone_id = "${var.route53_zone_id}"
   name    = "${var.route53_hostname}"
