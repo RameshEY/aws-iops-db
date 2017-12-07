@@ -251,4 +251,33 @@ EOF
   sed -i "s/\/etc\/mongod.conf/\/etc\/mongod-backup.conf/g" /etc/init/mongod-backup.conf
   sed -i "s/\/etc\/default\/mongod/\/etc\/default\/mongod-backup/g" /etc/init/mongod-backup.conf
   service mongod-backup start
+
+  wget http://download.oracle.com/otn-pub/java/jdk/7u40-b43/jdk-7u40-linux-x64.rpm?AuthParam=11232426132 -o jdk-7u40-linux-x64.rpm
+  rpm -Uvh jdk-7u40-linux-x64.rpm
+
+  sudo yum install java-devel
+
+  wget http://ftp.heanet.ie/mirrors/www.apache.org/dist/maven/maven-3/3.1.1/binaries/apache-maven-3.1.1-bin.tar.gz
+  sudo tar xzf apache-maven-*-bin.tar.gz -C /usr/local
+  cd /usr/local
+  sudo ln -s apache-maven-* maven
+  sudo vi /etc/profile.d/maven.sh
+
+  export M2_HOME=/usr/local/maven
+  export PATH=${M2_HOME}/bin:${PATH}
+
+  bash
+  mvn -version
+
+  curl -O --location https://github.com/brianfrankcooper/YCSB/releases/download/0.5.0/ycsb-0.5.0.tar.gz
+  tar xfvz ycsb-0.5.0.tar.gz
+  cd ycsb-0.5.0
+
+  ./bin/ycsb load mongodb-async -s -P workloads/workloada > outputLoad.txt
+
+  ./bin/ycsb run mongodb-async -s -P workloads/workloada > outputRun.txt
+
+  ./bin/ycsb load mongodb -s -P workloads/workloada > outputLoad.txt
+
+  ./bin/ycsb run mongodb -s -P workloads/workloada > outputRun.txt
 fi
