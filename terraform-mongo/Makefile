@@ -11,7 +11,7 @@
 # export TF_VAR_ec2_ami_id =<your ami id>
 # export TF_VAR_key_file =<your keypair file>
 # export TF_VAR_subnet_id =<your subnetid>
-# export TF_VAR_vpc_id =<your vpc id> 
+# export TF_VAR_vpc_id =<your vpc id>
 # ####################################################
 #
 STATEBUCKET = my-statefile-bucket-name
@@ -28,12 +28,23 @@ PREFIX = terraform-mongo
 .PHONY: all plan apply
 
 all: init.txt plan
-  echo "All"
+	echo "All"
 
 plan:
-  @echo "running terraform plan"
-  terraform plan
+	@echo "running terraform plan"
+	terraform plan
 
 apply:
-  @echo running terraform apply
-  terraform apply
+	@echo running terraform apply
+	terraform apply
+
+destroy:
+	@echo running terraform destroy
+	terraform destroy
+
+	# little hack target to prevent it running again without need
+	# for second nested Makefile
+init.txt:
+		@echo "initialize remote state file"
+		terraform remote config -backend=s3 -backend-config="bucket=$(STATEBUCKET)" -backend-config="key=$(PREFIX)/terraform.tfstate"
+		echo "ran terraform remote config -backend=s3 -backend-config=\"bucket=$(STATEBUCKET)\" -backend-config=\"key=$(PREFIX)/terraform.tfstate\"" > ./init.txt
