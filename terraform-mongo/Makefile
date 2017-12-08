@@ -18,12 +18,13 @@ STATEBUCKET = my-statefile-bucket-name
 PREFIX = terraform-mongo
 
 # # Before we start test that we have the manditory executables avilable
- EXECUTABLES = git terraform
- K := $(foreach exec,$(EXECUTABLES),\
+EXECUTABLES = git terraform
+K := $(foreach exec,$(EXECUTABLES),\
   $(if $(shell which $(exec)),some string,$(error "No $(exec) in PATH, consider apt-get install $(exec)")))
 #
 #     .PHONY: all s3bucket plan
 
+nothing:
 
 .PHONY: all plan apply
 
@@ -42,9 +43,9 @@ destroy:
 	@echo running terraform destroy
 	terraform destroy
 
-	# little hack target to prevent it running again without need
-	# for second nested Makefile
+# little hack target to prevent it running again without need
+# for second nested Makefile
 init.txt:
-		@echo "initialize remote state file"
-		terraform remote config -backend=s3 -backend-config="bucket=$(STATEBUCKET)" -backend-config="key=$(PREFIX)/terraform.tfstate"
-		echo "ran terraform remote config -backend=s3 -backend-config=\"bucket=$(STATEBUCKET)\" -backend-config=\"key=$(PREFIX)/terraform.tfstate\"" > ./init.txt
+	@echo "initialize remote state file"
+	terraform remote config -backend=s3 -backend-config="bucket=$(STATEBUCKET)" -backend-config="key=$(PREFIX)/terraform.tfstate"
+	echo "ran terraform remote config -backend=s3 -backend-config=\"bucket=$(STATEBUCKET)\" -backend-config=\"key=$(PREFIX)/terraform.tfstate\"" > ./init.txt
