@@ -135,27 +135,27 @@ resource "aws_instance" "cassandra_2" {
 }
 
 resource "aws_ebs_volume" "cassandra_0" {
-  availability_zone = "us-east-1a"
+  availability_zone = "${var.avail_zone}"
   size = "${var.ebs_volume_size}"
-  type = "gp2"
+  type = "${var.ebs_type}"
   tags {
     Name = "${var.user_prefix}_${var.user_name}_cassandra_0"
   }
 }
 
 resource "aws_ebs_volume" "cassandra_1" {
-  availability_zone = "us-east-1a"
+  availability_zone = "${var.avail_zone}"
   size = "${var.ebs_volume_size}"
-  type = "gp2"
+  type = "${var.ebs_type}"
   tags {
     Name = "${var.user_prefix}_${var.user_name}_cassandra_1"
   }
 }
 
 resource "aws_ebs_volume" "cassandra_2" {
-  availability_zone = "us-east-1a"
+  availability_zone = "${var.avail_zone}"
   size = "${var.ebs_volume_size}"
-  type = "gp2"
+  type = "${var.ebs_type}"
   tags {
     Name = "${var.user_prefix}_${var.user_name}_cassandra_2"
   }
