@@ -1,6 +1,6 @@
 module "cassandra_security_group" {
   source = "github.com/terraform-community-modules/tf_aws_sg//sg_cassandra"
-  security_group_name = "${var.security_group_name}-cassandra"
+  security_group_name = "cassandra-security-group"
   vpc_id = "${aws_vpc.cassandra.id}"
   source_cidr_block = "${var.source_cidr_block}"
 }
@@ -81,7 +81,7 @@ resource "aws_security_group" "allow_internet_access" {
   vpc_id = "${aws_vpc.cassandra.id}"
 
   tags {
-    Name = "kl_cluster_internet"
+    Name = "cassandra_cluster_internet"
   }
 
   egress {
@@ -97,7 +97,7 @@ resource "aws_security_group" "allow_all_ssh_access" {
   description = "ALlow ssh access from any ip"
   vpc_id = "${aws_vpc.cassandra.id}"
   tags {
-    Name = "kl_cluster_ssh"
+    Name = "cassandra_cluster_ssh"
   }
 
   ingress {
