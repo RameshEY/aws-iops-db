@@ -6,7 +6,7 @@ function create_fs_and_mount () {
     sudo mkfs -t ext4 $DEVICE_NAME
     sudo mkdir -p /var/lib/cassandra
     sudo mount $DEVICE_NAME /var/lib/cassandra
-    sudo echo '/dev/xdvh /var/lib/cassandra ext4 defaults 0 0' >> /etc/fstab
+    sudo echo '/dev/xvdh /var/lib/cassandra ext4 defaults 0 0' >> /etc/fstab
     echo "Done creating fs and mounting"
 }
 create_fs_and_mount
