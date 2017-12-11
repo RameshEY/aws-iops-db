@@ -54,12 +54,19 @@ echo LC_ALL=\"en_US.UTF-8\" >> /etc/default/locale
 echo never > /sys/kernel/mm/transparent_hugepage/enabled
 echo never > /sys/kernel/mm/transparent_hugepage/defrag
 
+# virtual memory tuning
+#dirty ratio  and dirtybackground ratio change
+# Swapiness vm.swapiness=TBD
+#
+
 # shorter keepalives, 120s recommended for MongoDB in official docs:
 # https://docs.mongodb.org/manual/faq/diagnostics/#does-tcp-keepalive-time-affect-mongodb-deployments
 sysctl -w net.ipv4.tcp_keepalive_time=120
 cat << EOF > /etc/sysctl.conf
 net.ipv4.tcp_keepalive_time = 120
 fs.file-max = 65536
+vm.dirty_ratio=15
+vm.dirty_background_ratio=5
 EOF
 sysctl -p
 
