@@ -151,8 +151,8 @@ EOF
   DEBIAN_FRONTEND=noninteractive dpkg --force-confold --install mongodb-mms_3.4.5.424-1_x86_64.deb
 
   cat << EOF > ${mongodb_basedir}/mms/conf/conf-mms.properties
-mongo.mongoUri=mongodb://mms-admin:${mms_password}@opsmanager-node-1.universe.com,opsmanager-node-2.universe.com,opsmanager-node-3.universe.com/?replicaSet=${mongodb_conf_replsetname}&maxPoolSize=150
-mongo.ssl=false
+mongo.mongoUri=mongodb://mms-admin:${mms_password}@opsmanager-node-1.kenzan.com,opsmanager-node-2.kenzan.com,opsmanager-node-3.kenzan.com/?replicaSet=${mongodb_conf_replsetname}&maxPoolSize=150
+mongo._=false
 mms.centralUrl=http://${opsmanager_subdomain}:8080
 EOF
 
