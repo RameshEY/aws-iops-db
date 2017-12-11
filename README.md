@@ -1,29 +1,33 @@
 # aws-iops-db
 
-## Planned Usage
+## Usage
 
-$ git clone https://github.com/kenzanlabs/aws-iops-db.git
-$ cd aws-iops-blog/
-$ export TF_VAR_key_name="keyname.pem"
-$ export TF_VAR_vpc_name="vpc-abc1234"
-$ export TF_VAR_subnet_name="subnet-abc1234"
+Setup Site Variables
 
-$ bash iops-run-test cassandra test1,test2,...
-$ bash iops-run-test mongoDB test1,test2,...
-provisioning test1
-database: mongoDB
-machine: r4.4xlarge 1TB gp2
-   \_ $ terraform database
-   \_ $ terraform ycsb instance...
+   $ export AWS_CONFIG_FILE=...
+   $ export AWS_DEFAULT_OUTPUT=json
+   $ export AWS_DEFAULT_REGION=us-east-1
+   $ export AWS_ACCESS_KEY=...
+   $ export AWS_SECRET_KEY=...
 
-run test1..
-   \_ $ ycsb load
-   \_ $ ycsb run command
+   $ export TF_VAR_aws_access_key=${AWS_ACCESS_KEY} 
+   $ export TF_VAR_aws_secret_key=${AWS_SECRET_KEY} 
 
-...
+   $ export TF_VAR_vpc_id="vpc-abc1234"
+   $ export TF_VAR_subnet_id="subnet-456ghjk"
+   $ export TF_VAR_aws_region="us-east-1"
+   $ export TF_VAR_key_name="mykeyname"
+   $ export TF_VAR_key_path="/path/to/mykeyname.pem"
 
+Run a test
+
+   $ git clone https://github.com/kenzanlabs/aws-iops-db.git
+   $ cd aws-iops-blog/
+
+   $ bash iopstest provision database test,test2 # partial implemented
 
 ## LICENSE
+
 Copyright 2017 Kenzan, LLC <http://kenzan.com>
  
 Licensed under the Apache License, Version 2.0 (the "License");
