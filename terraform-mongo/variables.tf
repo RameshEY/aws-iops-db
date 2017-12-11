@@ -12,7 +12,7 @@ variable "mongodb_conf_logpath" {
 }
 
 variable "mongodb_conf_engine" {
-  defualt = "/etc/mongod.conf"
+  default = "/etc/mongod.conf"
 }
 
 variable "mongodb_conf_replsetname" {}
