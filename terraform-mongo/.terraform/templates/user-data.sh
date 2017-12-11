@@ -7,7 +7,7 @@ hostname ${hostname}
 # apt
 #
 DEBIAN_FRONTEND=noninteractive apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 0C49F3730359A14518585931BC711F9BA15703C6
-echo "deb [ arch=amd64 ] http://repo.mongodb.com/apt/ubuntu trusty/mongodb-enterprise/3.4 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-enterprise.list
+echo "deb [ arch=amd64 ] http://repo.mongodb.com/apt/ubuntu trusty/mongodb-enterprise/3.6 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-enterprise.list
 DEBIAN_FRONTEND=noninteractive apt-key update -y
 DEBIAN_FRONTEND=noninteractive apt-get update -y
 DEBIAN_FRONTEND=noninteractive apt-get install -y awscli
@@ -151,8 +151,8 @@ EOF
   DEBIAN_FRONTEND=noninteractive dpkg --force-confold --install mongodb-mms_3.4.5.424-1_x86_64.deb
 
   cat << EOF > ${mongodb_basedir}/mms/conf/conf-mms.properties
-mongo.mongoUri=mongodb://mms-admin:${mms_password}@opsmanager-node-1.universe.com,opsmanager-node-2.universe.com,opsmanager-node-3.universe.com/?replicaSet=${mongodb_conf_replsetname}&maxPoolSize=150
-mongo.ssl=false
+mongo.mongoUri=mongodb://mms-admin:${mms_password}@opsmanager-node-1.kenzan.com,opsmanager-node-2.kenzan.com,opsmanager-node-3.kenzan.com/?replicaSet=${mongodb_conf_replsetname}&maxPoolSize=150
+mongo._=false
 mms.centralUrl=http://${opsmanager_subdomain}:8080
 EOF
 

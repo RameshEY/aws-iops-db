@@ -2,9 +2,19 @@ variable "name" {}
 variable "name2" {}
 variable "name3" {}
 variable "mongodb_version" {}
-variable "mongodb_basedir" {}
-variable "mongodb_conf_logpath" {}
-variable "mongodb_conf_engine" {}
+
+variable "mongodb_basedir" {
+  default = "/data/db"
+}
+
+variable "mongodb_conf_logpath" {
+  default = "/var/log/mongodb/mongod.log"
+}
+
+variable "mongodb_conf_engine" {
+  default = "/etc/mongod.conf"
+}
+
 variable "mongodb_conf_replsetname" {}
 variable "mongodb_conf_oplogsizemb" {}
 variable "mongodb_key_s3_object" {}
@@ -25,7 +35,7 @@ variable "aws_region" {}
 variable "key_file" {}
 
 variable "ec2_ami_id" {
-  default = "ami-fce3c696"
+  default = "ami-aa2ea6d0"
 }
 
 variable "ec2_instance_type" {
