@@ -69,6 +69,7 @@ function iopstest() {
 
          cd $workspace/$wkdir/
          ls -l 
+         terraform init
          terraform plan
          terraform apply
          echo cd ..
