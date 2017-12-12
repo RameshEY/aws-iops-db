@@ -11,14 +11,12 @@ $ export AWS_DEFAULT_REGION=us-east-1
 $ export AWS_ACCESS_KEY=...
 $ export AWS_SECRET_KEY=...
 
-$ export TF_VAR_aws_access_key=${AWS_ACCESS_KEY} 
-$ export TF_VAR_aws_secret_key=${AWS_SECRET_KEY} 
-
-$ export TF_VAR_vpc_id="vpc-abc1234"
-$ export TF_VAR_subnet_id="subnet-456ghjk"
-$ export TF_VAR_aws_region="us-east-1"
-$ export TF_VAR_key_name="mykeyname"
-$ export TF_VAR_key_path="/path/to/mykeyname.pem"
+$ export iopstest_owner="myname"
+$ export iopstest_vpc_id="vpc-abc1234"
+$ export iopstest_subnet_id="subnet-456ghjk"
+$ export iopstest_aws_region="us-east-1"
+$ export iopstest_key_name="mykeyname
+$ export iopstest_key_path="/path/to/mykeyname.pem"
 ```
 
 Run a test

@@ -1,9 +1,9 @@
-# The various ${var.foo} come from variables.tf
+# The various ${var.ycsb_foo} come from variables.tf
 # Specify the provider and access details
 provider "aws" {
-    region = "${var.aws_region}"
-    access_key = "${var.aws_access_key}"
-    secret_key = "${var.aws_secret_key}"
+    region = "${var.ycsb_aws_region}"
+    access_key = "${var.ycsb_aws_access_key}"
+    secret_key = "${var.ycsb_aws_secret_key}"
 }
 
 resource "aws_instance" "web" {
@@ -12,35 +12,36 @@ resource "aws_instance" "web" {
   # communicate with the resource (instance)
   connection {
     # The default username for our AMI
-    user = "${var.username}"
+    user = "${var.ycsb_username}"
 
     # The path to your keyfile
-    private_key = "${file("${var.key_path}")}" 
+    private_key = "${file("${var.ycsb_key_path}")}" 
   }
 
   # subnet ID for our VPC
-  subnet_id = "${var.subnet_id}"
+  subnet_id = "${var.ycsb_subnet_id}"
   # the instance type we want, comes from rundeck
-  instance_type = "${var.instance_type}"
+  instance_type = "${var.ycsb_instance_type}"
 
   # Lookup the correct AMI based on the region
   # we specified
-  ami = "${lookup(var.aws_amis, var.aws_region)}"
+  ami = "${lookup(var.ycsb_aws_amis, var.ycsb_aws_region)}"
 
   # The name of our SSH keypair you've created and downloaded
   # from the AWS console.
   #
   # https://console.aws.amazon.com/ec2/v2/home?region=us-west-2#KeyPairs:
   #
-  key_name = "${var.key_name}"
+  key_name = "${var.ycsb_key_name}"
 
   # We set the name as a tag
   tags {
-    "Name" = "${var.instance_name}"
+    "Name" = "${var.ycsb_instance_name}"
   }
 
   # need sg.tf later.
-  security_groups = [ "${var.security_group_name}" ]
+  #security_groups = [ "${var.ycsb_security_group_name}" ]
+  security_groups = [ "${aws_security_group.ycsb.id}"]
 
   provisioner "remote-exec" {
     inline = [
@@ -57,7 +58,7 @@ resource "aws_instance" "web" {
     connection {
       type = "ssh"
       user = "ubuntu"
-      private_key = "${file("${var.key_path}")}" 
+      private_key = "${file("${var.ycsb_key_path}")}" 
     }
   }
  
@@ -67,7 +68,7 @@ resource "aws_instance" "web" {
     connection {
       type = "ssh"
       user = "ubuntu"
-      private_key = "${file("${var.key_path}")}"
+      private_key = "${file("${var.ycsb_key_path}")}"
     }
   }
 
