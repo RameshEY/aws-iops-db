@@ -40,7 +40,8 @@ resource "aws_instance" "web" {
   }
 
   # need sg.tf later.
-  security_groups = [ "${var.ycsb_security_group_name}" ]
+  #security_groups = [ "${var.ycsb_security_group_name}" ]
+  security_groups = [ "${aws_security_group.ycsb.id}"]
 
   provisioner "remote-exec" {
     inline = [
