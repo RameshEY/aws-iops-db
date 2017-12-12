@@ -49,6 +49,25 @@ resource "aws_instance" "cassandra_0" {
 
 }
 
+resource "aws_ebs_volume" "cassandra_ebs_0" {
+  availability_zone = "${var.avail_zone}"
+  size = "${var.ebs_volume_size}"
+  type = "${var.ebs_type}"
+  tags {
+    Name = "${var.user_prefix}_${var.user_name}_cassandra_0"
+  }
+}
+
+resource "aws_volume_attachment" "cassandra_0_ebs_att" {
+  device_name = "${var.ebs_device_name}"
+  volume_id = "${aws_ebs_volume.cassandra_ebs_0.id}"
+  instance_id = "${aws_instance.cassandra_0.id}"
+}
+
+# uncomment below sections if there are other nodes in the Cassandra cluster, e.g. 2-3 nodes
+# the next 3 blocks to include node1 for a 2-node cluster (node0, node1)
+# the next 6 blocks to include node1, node2 for a 3-node cluster (node0, node1, node2)
+/*
 resource "aws_instance" "cassandra_1" {
   instance_type = "${var.instance_type}"
   ami = "${var.ami}"
@@ -100,6 +119,20 @@ resource "aws_instance" "cassandra_1" {
 
 }
 
+resource "aws_ebs_volume" "cassandra_ebs_1" {
+  availability_zone = "${var.avail_zone}"
+  size = "${var.ebs_volume_size}"
+  type = "${var.ebs_type}"
+  tags {
+    Name = "${var.user_prefix}_${var.user_name}_cassandra_1"
+  }
+}
+
+resource "aws_volume_attachment" "cassandra_1_ebs_att" {
+  device_name = "${var.ebs_device_name}"
+  volume_id = "${aws_ebs_volume.cassandra_ebs_1.id}"
+  instance_id = "${aws_instance.cassandra_1.id}"
+}
 
 resource "aws_instance" "cassandra_2" {
   instance_type = "${var.instance_type}"
@@ -152,24 +185,6 @@ resource "aws_instance" "cassandra_2" {
 
 }
 
-resource "aws_ebs_volume" "cassandra_ebs_0" {
-  availability_zone = "${var.avail_zone}"
-  size = "${var.ebs_volume_size}"
-  type = "${var.ebs_type}"
-  tags {
-    Name = "${var.user_prefix}_${var.user_name}_cassandra_0"
-  }
-}
-
-resource "aws_ebs_volume" "cassandra_ebs_1" {
-  availability_zone = "${var.avail_zone}"
-  size = "${var.ebs_volume_size}"
-  type = "${var.ebs_type}"
-  tags {
-    Name = "${var.user_prefix}_${var.user_name}_cassandra_1"
-  }
-}
-
 resource "aws_ebs_volume" "cassandra_ebs_2" {
   availability_zone = "${var.avail_zone}"
   size = "${var.ebs_volume_size}"
@@ -179,20 +194,9 @@ resource "aws_ebs_volume" "cassandra_ebs_2" {
   }
 }
 
-resource "aws_volume_attachment" "cassandra_0_ebs_att" {
-  device_name = "${var.ebs_device_name}"
-  volume_id = "${aws_ebs_volume.cassandra_ebs_0.id}"
-  instance_id = "${aws_instance.cassandra_0.id}"
-}
-
-resource "aws_volume_attachment" "cassandra_1_ebs_att" {
-  device_name = "${var.ebs_device_name}"
-  volume_id = "${aws_ebs_volume.cassandra_ebs_1.id}"
-  instance_id = "${aws_instance.cassandra_1.id}"
-}
-
 resource "aws_volume_attachment" "cassandra_2_ebs_att" {
   device_name = "${var.ebs_device_name}"
   volume_id = "${aws_ebs_volume.cassandra_ebs_2.id}"
   instance_id = "${aws_instance.cassandra_2.id}"
 }
+*/
