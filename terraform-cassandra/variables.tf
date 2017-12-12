@@ -10,6 +10,7 @@ variable "ami" { }
 variable "ebs_volume_size" { }
 variable "avail_zone" { }
 variable "ebs_type" { }
+variable "ebs_iops" { }
 variable "ebs_device_name" { }
 variable "root_block_size" { }
 variable "root_block_type" { }
@@ -27,11 +28,12 @@ variable "cassandra2_ip" { default = "10.2.5.172" }
 #export TF_VAR_user_name="ubuntu"
 #export TF_VAR_region="us-east-1"
 #export TF_VAR_avail_zone="us-east-1a"
-#export TF_VAR_instance_type="m3.xlarge"
+#export TF_VAR_instance_type="r4.4xlarge"
 #export TF_VAR_ami="ami-cd0f5cb6"
 #export TF_VAR_user_prefix="kliu"
-#export TF_VAR_ebs_volume_size=320
-#export TF_VAR_ebs_type="gp2"
+#export TF_VAR_ebs_volume_size=1000
+#export TF_VAR_ebs_type="io1"
+#export TF_VAR_ebs_iops=10000
 #export TF_VAR_ebs_device_name="/dev/xvdh"
 #export TF_VAR_root_block_size=8
 #export TF_VAR_root_block_type="gp2"

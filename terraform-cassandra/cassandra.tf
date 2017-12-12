@@ -17,6 +17,14 @@ resource "aws_instance" "cassandra_0" {
     delete_on_termination = true
   }
 
+  ebs_block_device {
+    device_name = "${var.ebs_device_name}"
+    volume_size = "${var.ebs_volume_size}"
+    volume_type = "${var.ebs_type}"
+    iops = "${var.ebs_iops}"
+    delete_on_termination = true
+  }
+
   provisioner "remote-exec" {
     inline = ["sudo mkdir -p /tmp/provisioning",
       "sudo chown -R ubuntu:ubuntu  /tmp/provisioning/"]
@@ -49,6 +57,9 @@ resource "aws_instance" "cassandra_0" {
 
 }
 
+
+# uncomment below sections if there are other nodes in the Cassandra cluster, e.g. 2-3 nodes
+/*
 resource "aws_instance" "cassandra_1" {
   instance_type = "${var.instance_type}"
   ami = "${var.ami}"
@@ -65,6 +76,14 @@ resource "aws_instance" "cassandra_1" {
   root_block_device {
     volume_size = "${var.root_block_size}"
     volume_type = "${var.root_block_type}"
+    delete_on_termination = true
+  }
+
+  ebs_block_device {
+    device_name = "${var.ebs_device_name}"
+    volume_size = "${var.ebs_volume_size}"
+    volume_type = "${var.ebs_type}"
+    iops = "${var.ebs_iops}"
     delete_on_termination = true
   }
 
@@ -100,7 +119,6 @@ resource "aws_instance" "cassandra_1" {
 
 }
 
-
 resource "aws_instance" "cassandra_2" {
   instance_type = "${var.instance_type}"
   ami = "${var.ami}"
@@ -117,6 +135,14 @@ resource "aws_instance" "cassandra_2" {
   root_block_device {
     volume_size = "${var.root_block_size}"
     volume_type = "${var.root_block_type}"
+    delete_on_termination = true
+  }
+
+  ebs_block_device {
+    device_name = "${var.ebs_device_name}"
+    volume_size = "${var.ebs_volume_size}"
+    volume_type = "${var.ebs_type}"
+    iops = "${var.ebs_iops}"
     delete_on_termination = true
   }
 
@@ -151,48 +177,4 @@ resource "aws_instance" "cassandra_2" {
   }
 
 }
-
-resource "aws_ebs_volume" "cassandra_ebs_0" {
-  availability_zone = "${var.avail_zone}"
-  size = "${var.ebs_volume_size}"
-  type = "${var.ebs_type}"
-  tags {
-    Name = "${var.user_prefix}_${var.user_name}_cassandra_0"
-  }
-}
-
-resource "aws_ebs_volume" "cassandra_ebs_1" {
-  availability_zone = "${var.avail_zone}"
-  size = "${var.ebs_volume_size}"
-  type = "${var.ebs_type}"
-  tags {
-    Name = "${var.user_prefix}_${var.user_name}_cassandra_1"
-  }
-}
-
-resource "aws_ebs_volume" "cassandra_ebs_2" {
-  availability_zone = "${var.avail_zone}"
-  size = "${var.ebs_volume_size}"
-  type = "${var.ebs_type}"
-  tags {
-    Name = "${var.user_prefix}_${var.user_name}_cassandra_2"
-  }
-}
-
-resource "aws_volume_attachment" "cassandra_0_ebs_att" {
-  device_name = "${var.ebs_device_name}"
-  volume_id = "${aws_ebs_volume.cassandra_ebs_0.id}"
-  instance_id = "${aws_instance.cassandra_0.id}"
-}
-
-resource "aws_volume_attachment" "cassandra_1_ebs_att" {
-  device_name = "${var.ebs_device_name}"
-  volume_id = "${aws_ebs_volume.cassandra_ebs_1.id}"
-  instance_id = "${aws_instance.cassandra_1.id}"
-}
-
-resource "aws_volume_attachment" "cassandra_2_ebs_att" {
-  device_name = "${var.ebs_device_name}"
-  volume_id = "${aws_ebs_volume.cassandra_ebs_2.id}"
-  instance_id = "${aws_instance.cassandra_2.id}"
-}
+*/
