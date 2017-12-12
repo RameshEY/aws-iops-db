@@ -1,5 +1,9 @@
 # aws-iops-db (draft, wip)
 
+## Requirements
+
+* Terraform v0.11.0+
+
 ## Usage
 
 Setup Site Variables
