@@ -1,7 +1,6 @@
 #!/bin/bash -v
 
-# internal EC2 short hostname won't resolve via .tmcs nameservers
-hostname ${hostname}
+
 
 #
 # apt
@@ -78,18 +77,6 @@ DEBIAN_FRONTEND=noninteractive apt-get install -y numactl
 # "mongod: error while loading shared libraries: libnetsnmpmibs.so.30: cannot open shared object file: No such file or directory"
 DEBIAN_FRONTEND=noninteractive apt-get install -y libsnmp-dev
 
-# used by OpsManager
-DEBIAN_FRONTEND=noninteractive apt-get install -y munin-node
-echo "allow ^10\..*$" >> /etc/munin/munin-node.conf
-ln -s /usr/share/munin/plugins/iostat /etc/munin/plugins/iostat
-ln -s /usr/share/munin/plugins/iostat_ios /etc/munin/plugins/iostat_ios
-/etc/init.d/munin-node restart
-
-#
-# OpsManager Agent
-#
-if [ "${role_opsmanager}" == "true" ]; then
-
   # Install MongoDB
   DEBIAN_FRONTEND=noninteractive apt-get install -y mongodb-enterprise=${mongodb_version} mongodb-enterprise-server=${mongodb_version} mongodb-enterprise-shell=${mongodb_version} mongodb-enterprise-mongos=${mongodb_version} mongodb-enterprise-tools=${mongodb_version}
 
@@ -116,7 +103,7 @@ if [ "${role_opsmanager}" == "true" ]; then
 
   # setup mongodb.key
   ENC_KEY_PATH=${mongodb_basedir}/mongodb.key
-  aws s3 --region=${aws_region} cp ${mongodb_key_s3_object} $ENC_KEY_PATH
+
   chmod 600 $ENC_KEY_PATH
   chown mongodb:mongodb $ENC_KEY_PATH
 
@@ -139,108 +126,19 @@ net:
 security:
    keyFile: "$ENC_KEY_PATH"
 
-replication:
-   replSetName: ${mongodb_conf_replsetname}
-   oplogSizeMB: ${mongodb_conf_oplogsizemb}
 EOF
 
   service mongod stop
   service mongod start
 
-  curl -k -OL https://downloads.mongodb.com/on-prem-mms/deb/mongodb-mms_3.4.5.424-1_x86_64.deb
-  DEBIAN_FRONTEND=noninteractive dpkg --force-confold --install mongodb-mms_3.4.5.424-1_x86_64.deb
 
-  cat << EOF > ${mongodb_basedir}/mms/conf/conf-mms.properties
-mongo.mongoUri=mongodb://mms-admin:${mms_password}@opsmanager-node-1.kenzan.com,opsmanager-node-2.kenzan.com,opsmanager-node-3.kenzan.com/?replicaSet=${mongodb_conf_replsetname}&maxPoolSize=150
-mongo._=false
-mms.centralUrl=http://${opsmanager_subdomain}:8080
-EOF
 
-  MMS_KEY_PATH=${mongodb_basedir}/mongodb-mms.key
-  aws s3 --region=${aws_region} cp ${opsmanager_key_s3_object} $MMS_KEY_PATH
-  chmod 600 $MMS_KEY_PATH
-  chown mongodb-mms:mongodb-mms $MMS_KEY_PATH
-  REGEX=`echo $MMS_KEY_PATH | awk '{gsub("/", "\\\/");print}'`
-  sed -i "s/ENC_KEY_PATH=.*/ENC_KEY_PATH=$REGEX/" ${mongodb_basedir}/mms/conf/mms.conf
 
-  # ensure that ./mongo/backup directory exists to allow Backup Daemon to work on backups (mongodb-mms user)
-  mkdir -p ${mongodb_basedir}/backup/snapshots
-  chown mongodb-mms:mongodb-mms -R ${mongodb_basedir}/backup
 
-  # ensure that ./mongo/snapshots directory exists to allow Backup Daemon to store snapshots (mongodb-mms user)
-  mkdir -p ${mongodb_basedir}/snapshots
-  chown mongodb-mms:mongodb-mms -R ${mongodb_basedir}/snapshots
 
-  service mongodb-mms stop
-  service mongodb-mms start # NOTE: run mv /opt/mongodb/mms /opt/mongodb/mms-old if it fails and try to reinstall again
-fi
 
-#
-# Automation Agent (requires OpsManager available)
-#
-if [ "${role_node}" == "true" ]; then
-  curl -k -OL http://${opsmanager_subdomain}:8080/download/agent/automation/mongodb-mms-automation-agent-manager_3.2.12.2107-1_amd64.deb
-  DEBIAN_FRONTEND=noninteractive dpkg --install mongodb-mms-automation-agent-manager_3.2.12.2107-1_amd64.deb
 
-  mkdir -p ${mongodb_basedir}
-  chown mongodb:mongodb ${mongodb_basedir}
 
-  REGEX=`echo http://${opsmanager_subdomain}:8080 | awk '{gsub("/", "\\\/");print}'`
-  sed -i "s/mmsBaseUrl=.*/mmsBaseUrl=$REGEX/" /etc/mongodb-mms/automation-agent.config
-  sed -i "s/mmsGroupId=.*/mmsGroupId=${mms_group_id}/" /etc/mongodb-mms/automation-agent.config
-  sed -i "s/mmsApiKey=.*/mmsApiKey=${mms_api_key}/" /etc/mongodb-mms/automation-agent.config
-
-  # give DNS a chance to load, required for Automation Agent
-  # otherwise, fails promptly in /var/log/mongodb-mms-automation/automation-agent-fatal.log
-  # while ! nslookup ${hostname}; do
-  #   echo "Waiting for hostname ${hostname} to resolve .. "
-  #   sleep 1;
-  # done
-  # sleep 20
-
-  # Automation Agent won't start without proper hostname resolution, but Route53 takes a few mins to propagate.
-  echo "`curl http://169.254.169.254/latest/meta-data/local-ipv4` ${hostname}" >> /etc/hosts
-
-  # setup ssl certificates for mongodb
-  SSL_PATH=/etc/mongodb/ssl
-  mkdir -p $SSL_PATH
-  aws s3 --region=${aws_region} cp ${ssl_ca_key_s3_object} $SSL_PATH/CAroot.pem
-  aws s3 --region=${aws_region} cp ${ssl_mongod_key_s3_object} $SSL_PATH/mongod.pem
-  aws s3 --region=${aws_region} cp ${ssl_agent_key_s3_object} $SSL_PATH/agent.pem
-  chmod 700 -R $SSL_PATH
-  chown -R mongodb:mongodb $SSL_PATH
-
-  service mongodb-mms-automation-agent stop
-  service mongodb-mms-automation-agent start
-fi
-
-#
-# Backup Node (connects to OpsManager)
-#
-if [ "${role_backup}" == "true" ]; then
-  cat << EOF > /etc/mongod-backup.conf
-storage:
-  dbPath: ${mongodb_basedir}/backup-data
-  journal:
-    enabled: true
-  engine: wiredTiger
-
-systemLog:
-  destination: file
-  logAppend: true
-  path: /var/log/mongodb-backup/mongod.log
-
-net:
-  bindIp: 0.0.0.0
-  port: 27018
-
-security:
-   keyFile: "${mongodb_basedir}/mongodb.key"
-
-replication:
-   replSetName: opsmanagerBackup
-   oplogSizeMB: 16384
-EOF
   mkdir -p ${mongodb_basedir}/backup-data
   chown mongodb:mongodb ${mongodb_basedir}/backup-data
 
@@ -264,7 +162,7 @@ EOF
   sudo vi /etc/profile.d/maven.sh
 
   export M2_HOME=/usr/local/maven
-  export PATH=${M2_HOME}/bin:${PATH}
+
 
   bash
   mvn -version
@@ -273,11 +171,5 @@ EOF
   tar xfvz ycsb-0.5.0.tar.gz
   cd ycsb-0.5.0
 
-  ./bin/ycsb load mongodb-async -s -P workloads/workloada > outputLoad.txt
 
-  ./bin/ycsb run mongodb-async -s -P workloads/workloada > outputRun.txt
-
-  ./bin/ycsb load mongodb -s -P workloads/workloada > outputLoad.txt
-
-  ./bin/ycsb run mongodb -s -P workloads/workloada > outputRun.txt
 fi
