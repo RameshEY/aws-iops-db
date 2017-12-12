@@ -1,0 +1,108 @@
+#!/bin/bash
+
+set -e
+set -x
+
+THIS=$1
+
+function iopstest() {
+
+   function debug() {
+     echo "debug: $*"
+   }
+
+   function provision() {
+      local database="$1"
+
+      shift
+
+      local testIds="$*"
+            testIds=${testIds//,/ }  # replace commas w/ spaces
+            testIds=$(echo $testIds) # replace multiple spaces w/ one space
+
+      for t in $testIds; do
+        provision_test $database $t
+      done
+   }
+
+   function provision_test() {
+      local database="$1"
+      local testId="$2"
+
+      case "$1" in
+         cassandra)
+             ;;
+         mongodb)
+             ;;
+         *)
+             usage && exit 1
+             ;;
+      esac
+
+      workspace=".workspace/$database/$testId"
+      [[ -d $workspace ]] && rm -R $workspace
+      mkdir -p $workspace
+
+      for wkdir in ycsb; do
+
+         if [[ $wkdir -eq "ycsb" ]]; then
+            #TF_VAR_security_group_name="${TF_VAR_security_group_name}-${testId}"
+            TF_VAR_instance_name="${TF_VAR_instance_name}-${testId}"
+         fi
+
+         source="terraform-${wkdir}"
+         if [[ "$wkdir" -eq "ycsb" ]]; then
+            source="terraform-YCSB"
+         fi;
+         mkdir -p $workspace/$wkdir
+         cp $source/* $workspace/$wkdir/
+
+         if [ -f specs/$wkdir/$wkdir.auto.tfvars ]; then
+            # create or append to all spec tfvars into one terraform.tfvars
+            cat specs/$wkdir/$wkdir.auto.tfvars | tee -a $workspace/$wkdir/terraform.tfvars
+         fi
+
+         cd $workspace/$wkdir/
+         ls -l 
+         terraform plan
+         terraform apply
+         echo cd ..
+      done
+      :;
+   }
+
+   function run() {
+      echo run: parameters are "$*"
+      :;
+   }
+
+   function usage() {
+      echo "usage: $THIS provision <database> <test>"
+   }
+
+   #
+   # parameter parsing
+   #
+
+   action=$1
+   shift
+
+   case "$action" in
+
+     -h) action="usage"
+         ;;
+
+      *)
+         ;;
+
+   esac
+
+   if [[ $(type -t "$action") -eq "function" ]]; then
+      $action $*
+   else
+      usage && exit 1
+   fi
+
+}
+
+iopstest $*
