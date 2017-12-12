@@ -4,25 +4,29 @@
 
 Setup Site Variables
 
-   $ export AWS_CONFIG_FILE=...
-   $ export AWS_DEFAULT_OUTPUT=json
-   $ export AWS_DEFAULT_REGION=us-east-1
-   $ export AWS_ACCESS_KEY=...
-   $ export AWS_SECRET_KEY=...
+```
+$ export AWS_CONFIG_FILE=...
+$ export AWS_DEFAULT_OUTPUT=json
+$ export AWS_DEFAULT_REGION=us-east-1
+$ export AWS_ACCESS_KEY=...
+$ export AWS_SECRET_KEY=...
 
-   $ export iopstest_owner="myname"
-   $ export iopstest_vpc_id="vpc-abc1234"
-   $ export iopstest_subnet_id="subnet-456ghjk"
-   $ export iopstest_aws_region="us-east-1"
-   $ export iopstest_key_name="mykeyname
-   $ export iopstest_key_path="/path/to/mykeyname.pem"
+$ export iopstest_owner="myname"
+$ export iopstest_vpc_id="vpc-abc1234"
+$ export iopstest_subnet_id="subnet-456ghjk"
+$ export iopstest_aws_region="us-east-1"
+$ export iopstest_key_name="mykeyname
+$ export iopstest_key_path="/path/to/mykeyname.pem"
+```
 
 Run a test
 
-   $ git clone https://github.com/kenzanlabs/aws-iops-db.git
-   $ cd aws-iops-blog/
+```
+$ git clone https://github.com/kenzanlabs/aws-iops-db.git
+$ cd aws-iops-blog/
 
-   $ bash iopstest provision database test,test2 # partial implemented
+$ bash iopstest provision database test,test2 # partial implemented
+```
 
 ## LICENSE
 
