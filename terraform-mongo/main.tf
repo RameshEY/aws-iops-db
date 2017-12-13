@@ -18,8 +18,7 @@ resource "aws_instance" "mongodb" {
   instance_type               = "${var.ec2_instance_type}"
   key_name                    = "mongodb"
   user_data                   = "${data.template_file.user_data.rendered}"
-  iam_instance_profile        = "${var.mongodb_iam_name}"
-  security_groups             = ["${aws_security_group.mongo.name}"]
+  security_groups             = ["${aws_security_group.mongo.id}"]
   subnet_id                   = "${var.subnet_id}"
   associate_public_ip_address = true
 
