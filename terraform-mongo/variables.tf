@@ -18,7 +18,6 @@ variable "mongodb_conf_engine" {
 
 variable "mongodb_iam_name" {}
 
-variable "security_group_name" {}
 variable "vpc_id" {}
 variable "subnet_id" {}
 
