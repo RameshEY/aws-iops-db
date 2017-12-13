@@ -18,8 +18,7 @@ resource "aws_instance" "mongodb" {
   instance_type               = "${var.ec2_instance_type}"
   key_name                    = "mongodb"
   user_data                   = "${data.template_file.user_data.rendered}"
-  iam_instance_profile        = "${var.mongodb_iam_name}"
-  vpc_security_group_ids      = ["${var.security_group_name}"]
+  security_groups             = ["${aws_security_group.mongo.id}"]
   subnet_id                   = "${var.subnet_id}"
   associate_public_ip_address = true
 
@@ -41,28 +40,7 @@ resource "aws_instance" "mongodb" {
 
   connection {
     user     = "ubuntu"
-    key_file = "{var.key_file}"
-  }
-}
-
-resource "aws_security_group" "km-blog" {
-  name   = "${var.security_group_name}"
-  vpc_id = "${var.vpc_id}"
-
-  description = "Allow all inbound traffic"
-
-  ingress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    key_file = "${var.key_file}"
   }
 }
 
