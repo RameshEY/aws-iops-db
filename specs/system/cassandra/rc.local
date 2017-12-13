@@ -1,0 +1,23 @@
+#!/bin/sh -e
+#
+# rc.local
+#
+# This script is executed at the end of each multiuser runlevel.
+# Make sure that the script will "exit 0" on success or any other
+# value on error.
+#
+# In order to enable or disable this script just change the execution
+# bits.
+#
+# By default this script does nothing.
+# replace ${DEVICE_NAME} with the block device name e.g. xvdh, nvem01 etc. 
+#echo deadline > /sys/block/${DEVICE_NAME}/queue/scheduler
+#OR...
+echo noop > /sys/block/${DEVICE_NAME}/queue/scheduler
+touch /var/lock/subsys/local
+echo 0 > /sys/class/block/${DEVICE_NAME}/queue/rotational
+echo 8 > /sys/class/block/${DEVICE_NAME}/queue/read_ahead_kb
+echo never > /sys/kernel/mm/transparent_hugepage/defrag
+echo never > /sys/kernel/mm/transparent_hugepage/enabled
+echo 0 > /proc/sys/vm/zone_reclaim_mode
+exit 0
