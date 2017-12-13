@@ -2,17 +2,17 @@ module "cassandra_security_group" {
   source = "github.com/terraform-community-modules/tf_aws_sg//sg_cassandra"
   security_group_name = "cassandra-security-group"
   vpc_id = "${aws_vpc.cassandra.id}"
-  source_cidr_block = "${var.source_cidr_block}"
+  source_cidr_block = "${var.csdb_source_cidr_block}"
 }
 
-provider "aws" {
-  access_key = "${var.access_key}"
-  secret_key = "${var.secret_key}"
-  region = "${var.region}"
-}
+#provider "aws" {
+#  access_key = "${var.csdb_aws_access_key}"
+#  secret_key = "${var.csdb_aws_secret_key}"
+#  region = "${var.csdb_aws_region}"
+#}
 
 resource "aws_vpc" "cassandra" {
-  cidr_block = "${var.cidr}"
+  cidr_block = "${var.csdb_cidr}"
   enable_dns_hostnames = true
   enable_dns_support = true
   instance_tenancy     = "default"
@@ -23,16 +23,16 @@ resource "aws_subnet" "main" {
   vpc_id = "${aws_vpc.cassandra.id}"
   cidr_block = "10.2.5.128/25"
   map_public_ip_on_launch = true
-  availability_zone = "${var.avail_zone}"
+  availability_zone = "${var.csdb_avail_zone}"
   tags {
-    Name = "${var.user_name}_Main"
+    Name = "${var.csdb_user_name}_Main"
   }
 }
 
 resource "aws_internet_gateway" "gw" {
   vpc_id = "${aws_vpc.cassandra.id}"
   tags {
-    Name = "${var.user_name}"
+    Name = "${var.csdb_user_name}"
   }
 }
 
@@ -66,7 +66,7 @@ resource "aws_network_acl" "main" {
   }
 
   tags {
-    Name = "${var.user_name}"
+    Name = "${var.csdb_user_name}"
   }
 }
 
