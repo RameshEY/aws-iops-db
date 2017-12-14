@@ -1,0 +1,18 @@
+# Casandra Load Test: Update heavy workload
+#
+#   Read/update ratio: 20/80
+
+recordcount=1000000
+operationcount=1000000
+workload=com.yahoo.ycsb.workloads.CoreWorkload
+
+readallfields=true
+writeallfields=true
+
+readproportion=0.2
+updateproportion=0.8
+scanproportion=0
+insertproportion=0
+
+requestdistribution=zipfian
+
