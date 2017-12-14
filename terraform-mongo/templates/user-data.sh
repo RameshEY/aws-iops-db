@@ -55,7 +55,7 @@ echo never > /sys/kernel/mm/transparent_hugepage/defrag
 
 # virtual memory tuning
 #dirty ratio  and dirtybackground ratio change
-# Swapiness vm.swapiness=TBD
+vm.swapiness=0
 #
 
 # shorter keepalives, 120s recommended for MongoDB in official docs:
@@ -66,6 +66,7 @@ net.ipv4.tcp_keepalive_time = 120
 fs.file-max = 65536
 vm.dirty_ratio=15
 vm.dirty_background_ratio=5
+vm.swapiness=0
 EOF
 sysctl -p
 
