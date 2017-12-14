@@ -16,8 +16,6 @@ variable "mongodb_conf_engine" {
   default = "/etc/mongod.conf"
 }
 
-variable "mongodb_iam_name" {}
-
 variable "vpc_id" {}
 variable "subnet_id" {}
 

@@ -52,6 +52,10 @@ echo LC_ALL=\"en_US.UTF-8\" >> /etc/default/locale
 # kernel tuning recommended by MongoDB
 echo never > /sys/kernel/mm/transparent_hugepage/enabled
 echo never > /sys/kernel/mm/transparent_hugepage/defrag
+echo noop > /sys/block/${DEVICE_NAME}/queue/scheduler
+touch /var/lock/subsys/local
+echo 0 > /sys/class/block/${DEVICE_NAME}/queue/rotational
+echo 8 > /sys/class/block/${DEVICE_NAME}/queue/read_ahead_kb
 
 # virtual memory tuning
 #dirty ratio  and dirtybackground ratio change
@@ -138,6 +142,7 @@ EOF
   service mongod stop
   service mongod start
 
+  numactl --interleave=all mongod 
 
 
 

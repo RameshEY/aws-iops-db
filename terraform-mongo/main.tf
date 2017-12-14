@@ -16,7 +16,7 @@ data "template_file" "user_data" {
 resource "aws_instance" "mongodb" {
   ami                         = "${var.ec2_ami_id}"
   instance_type               = "${var.ec2_instance_type}"
-  key_name                    = "mongodb"
+  key_name                    = "kenzan-scratch"
   user_data                   = "${data.template_file.user_data.rendered}"
   security_groups             = ["${aws_security_group.mongo.id}"]
   subnet_id                   = "${var.subnet_id}"
