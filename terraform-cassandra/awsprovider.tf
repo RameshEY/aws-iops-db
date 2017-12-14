@@ -1,7 +1,9 @@
+/* 
 module "cassandra_security_group" {
   source = "github.com/terraform-community-modules/tf_aws_sg//sg_cassandra"
-  security_group_name = "cassandra-security-group"
-  vpc_id = "${aws_vpc.cassandra.id}"
+  security_group_name = "${var.csdb_security_group_name}" 
+  #vpc_id = "${aws_vpc.cassandra.id}"
+  vpc_id = "${var.csdb_vpc_id}"
   source_cidr_block = "${var.csdb_source_cidr_block}"
 }
 
@@ -108,3 +110,4 @@ resource "aws_security_group" "allow_all_ssh_access" {
   }
 
 }
+*/

@@ -1,15 +1,23 @@
-resource "aws_instance" "cassandra_0" {
+resource "aws_instance" "database" {
+
   instance_type = "${var.csdb_instance_type}"
   ami = "${var.csdb_ami}"
   key_name = "${var.csdb_key_name}"
+
+  subnet_id = "${var.csdb_subnet_id}"
+
+/*
   private_ip = "${var.csdb_cassandra0_ip}"
   subnet_id = "${aws_subnet.main.id}"
   vpc_security_group_ids = ["${module.cassandra_security_group.security_group_id}", "${aws_security_group.allow_internet_access.id}", "${aws_security_group.allow_all_ssh_access.id}"]
   depends_on = ["aws_internet_gateway.gw"]
+*/
 
   tags {
     Name = "${var.csdb_instance_name}"
   }
+
+  security_groups = [ "${aws_security_group.database.id}"]
 
   root_block_device {
     volume_size = "${var.csdb_root_block_size}"

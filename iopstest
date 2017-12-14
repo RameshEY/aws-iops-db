@@ -25,25 +25,23 @@ function iopstest() {
       done
    }
 
+   provision_security_groups() {
+     :;
+   }
+
    function provision_test() {
       local database="$1"
       local testId="$2"
-
-      case "$1" in
-         cassandra)
-             ;;
-         mongodb)
-             ;;
-         *)
-             usage && exit 1
-             ;;
-      esac
 
       workspace=".workspace/$database/$testId"
       [[ -d $workspace ]] && rm -Rf $workspace
       mkdir -p $workspace
 
       for wkdir in common ycsb $database; do
+
+         if [ -f specs/$wkdir/$wkdir.env.sh ]; then
+            source specs/$wkdir/$wkdir.env.sh
+         fi
 
          case $wkdir in
             ycsb)
@@ -68,14 +66,11 @@ function iopstest() {
             cat specs/$wkdir/$wkdir.auto.tfvars | tee -a $workspace/terraform.tfvars
          fi
 
-         if [ -f specs/$wkdir/$wkdir.env.sh ]; then
-            source specs/$wkdir/$wkdir.env.sh
-         fi
       done
 
       cd $workspace/
       ls -l 
-      #terraform init
+      terraform init
       terraform get
       terraform plan
       terraform apply

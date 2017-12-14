@@ -1,5 +1,8 @@
 variable "csdb_aws_access_key" { }
 variable "csdb_aws_secret_key" { }
+
+variable "csdb_vpc_id" { }
+variable "csdb_subnet_id" { }
 variable "csdb_key_path" { }
 variable "csdb_key_name" { }
 variable "csdb_aws_region" { }
@@ -7,6 +10,8 @@ variable "csdb_user_name" { }
 variable "csdb_instance_name" { }
 variable "csdb_instance_type" { }
 variable "csdb_ami" { }
+variable "csdb_security_group_name" { }
+
 variable "csdb_ebs_volume_size" { }
 variable "csdb_avail_zone" { }
 variable "csdb_ebs_type" { }
@@ -16,6 +21,7 @@ variable "csdb_root_block_size" { }
 variable "csdb_root_block_type" { }
 variable "csdb_cidr" { default = "10.2.4.0/23" }
 variable "csdb_source_cidr_block" { default = ["10.2.5.128/25"] }
+
 variable "csdb_cassandra0_ip" { default = "10.2.5.170" }
 variable "csdb_cassandra1_ip" { default = "10.2.5.171" }
 variable "csdb_cassandra2_ip" { default = "10.2.5.172" }
