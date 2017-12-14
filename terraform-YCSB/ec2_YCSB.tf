@@ -1,10 +1,10 @@
 # The various ${var.ycsb_foo} come from variables.tf
 # Specify the provider and access details
-provider "aws" {
-    region = "${var.ycsb_aws_region}"
-    access_key = "${var.ycsb_aws_access_key}"
-    secret_key = "${var.ycsb_aws_secret_key}"
-}
+#provider "aws" {
+#    region = "${var.ycsb_aws_region}"
+#    access_key = "${var.ycsb_aws_access_key}"
+#    secret_key = "${var.ycsb_aws_secret_key}"
+#}
 
 resource "aws_instance" "web" {
 

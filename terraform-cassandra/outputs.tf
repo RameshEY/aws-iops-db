@@ -1,5 +1,5 @@
-output "cassandra_0" {
-    value = "${aws_instance.cassandra_0.public_ip}"
+output "database" {
+    value = "${aws_instance.database.public_ip}"
 }
 
 

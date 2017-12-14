@@ -29,7 +29,13 @@ Run a test
 $ git clone https://github.com/kenzanlabs/aws-iops-db.git
 $ cd aws-iops-blog/
 
-$ bash iopstest provision database test,test2 # partial implemented
+$ bash iopstest provision database test1,test2 # partial implemented
+```
+
+Destory a test
+
+```
+$ bash iopstest destroy database test1
 ```
 
 ## LICENSE

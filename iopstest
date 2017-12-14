@@ -25,61 +25,78 @@ function iopstest() {
       done
    }
 
+   provision_security_groups() {
+     :;
+   }
+
    function provision_test() {
       local database="$1"
       local testId="$2"
 
-      case "$1" in
-         cassandra)
-             ;;
-         mongodb)
-             ;;
-         *)
-             usage && exit 1
-             ;;
-      esac
-
       workspace=".workspace/$database/$testId"
-      [[ -d $workspace ]] && rm -R $workspace
+      [[ -d $workspace ]] && rm -Rf $workspace
       mkdir -p $workspace
 
-      for wkdir in ycsb; do
-
-         if [[ $wkdir -eq "ycsb" ]]; then
-            #TF_VAR_security_group_name="${TF_VAR_security_group_name}-${testId}"
-            TF_VAR_ycsb_instance_name="${TF_VAR_ycsb_instance_name}-${testId}"
-         fi
-
-         source="terraform-${wkdir}"
-         if [[ "$wkdir" -eq "ycsb" ]]; then
-            source="terraform-YCSB"
-         fi;
-
-         mkdir -p $workspace/$wkdir
-         cp $source/* $workspace/$wkdir/
-
-         # create or append to all spec tfvars into one terraform.tfvars
-         if [ -f specs/$wkdir/$wkdir.auto.tfvars ]; then
-            cat specs/$wkdir/$wkdir.auto.tfvars | tee -a $workspace/$wkdir/terraform.tfvars
-         fi
+      for wkdir in common ycsb $database; do
 
          if [ -f specs/$wkdir/$wkdir.env.sh ]; then
             source specs/$wkdir/$wkdir.env.sh
          fi
 
-         cd $workspace/$wkdir/
-         ls -l 
-         terraform init
-         terraform plan
-         terraform apply
-         echo cd ..
+         case $wkdir in
+            ycsb)
+               #TF_VAR_security_group_name="${TF_VAR_security_group_name}-${testId}"
+               TF_VAR_ycsb_instance_name="${TF_VAR_ycsb_instance_name}-${testId}"
+               ;;
+            cassandra)
+               TF_VAR_csdb_instance_name="${TF_VAR_csdb_instance_name}-${testId}"
+               ;;
+         esac
+
+         source="terraform-${wkdir}"
+         if [[ "$wkdir" == "ycsb" ]]; then
+            source="terraform-YCSB"
+         fi;
+
+         mkdir -p $workspace/   # should be mkdir -p $workspace
+         cp $source/* $workspace/
+
+         # create or append to all spec tfvars into one terraform.tfvars
+         if [ -f specs/$wkdir/$wkdir.auto.tfvars ]; then
+            cat specs/$wkdir/$wkdir.auto.tfvars | tee -a $workspace/terraform.tfvars
+         fi
+
       done
-      :;
+
+      cd $workspace/
+      ls -l 
+      terraform init
+      terraform get
+      terraform plan
+      terraform apply
+      cd ..
    }
 
    function run() {
       echo run: parameters are "$*"
       :;
+   }
+
+   function destroy() {
+      local database="$1"
+      local testId="$2"
+
+      workspace=".workspace/$database/$testId"
+
+      for wkdir in common ycsb $database; do
+         if [ -f specs/$wkdir/$wkdir.env.sh ]; then
+            source specs/$wkdir/$wkdir.env.sh
+         fi
+      done
+
+      cd $workspace/
+      terraform destroy
+      cd ..
    }
 
    function usage() {
