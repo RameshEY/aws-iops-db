@@ -7,7 +7,7 @@ resource "aws_instance" "machine" {
   instance_type               = "${var.machine_instance_type}"
   associate_public_ip_address = true
 
-# fixme
+# fixme need database details for this
 # security_groups             = ["${aws_security_group.database.id}"]
 
   root_block_device {
