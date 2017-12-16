@@ -26,6 +26,11 @@ function iopstest_command() {
    ### start ###
 
    local IOPSTEST_ROOT=$(pwd)
+   local IOPSTEST_CONFIG=$(pwd)/conf/iopstest.conf
+
+   if [[ ! -f $IOPSTEST_CONFIG ]]; then
+      _error "file not found $IOPSTEST_CONFIG"
+   fi
 
    for p in $*; do
       [[ $p =~ -h ]]     && _usage;
@@ -50,7 +55,16 @@ function iopstest_command() {
 
    local t
    for t in $testIds; do
-      libiopstest $action $database $t
+
+      options=$(cat $IOPSTEST_ROOT/conf/iopstest.conf | grep -v "^#" | grep "$database" | grep " $t " )
+
+      if [[ -z $options ]]; then
+         _error "test configuration not found in $iopstest_config_file"
+      fi
+
+      libiopstest $action $options
+      #libiopstest $action $database $t
+
    done
 
    exit 0

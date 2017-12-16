@@ -9,6 +9,8 @@ function libiopstest() {
    local action="$1"
    local database="$2"
    local testId="$3"
+   local machine="$4"
+   local workload="$5"
 
    local workspace_root="${IOPSTEST_ROOT}/.workspace"
    local workspace="${workspace_root}/${database}/${testId}"
@@ -20,17 +22,31 @@ function libiopstest() {
    cd $IOPSTEST_ROOT
 
    local wkdir
-   for wkdir in common ycsb $database; do
-      if [[ -f specs/$wkdir/$wkdir.env.sh ]]; then
-         source specs/$wkdir/$wkdir.env.sh
-      fi
+   for wkdir in common machine $database ycsb; do
       case $wkdir in
+          machine)
+              if [[ -f specs/$wkdir/$machine.env.sh ]]; then
+                 source specs/$wkdir/$machine.env.sh
+              fi
+              ;;
+          *)
+              if [[ -f specs/$wkdir/$wkdir.env.sh ]]; then
+                 source specs/$wkdir/$wkdir.env.sh
+              fi
+              ;;
+      esac
+      case $wkdir in
+          cassandra)
+              TF_VAR_csdb_instance_name="${TF_VAR_csdb_instance_name}-${testId}"
+              export TF_VAR_machine_instance_name=$TF_VAR_csdb_instance_name
+              ;;
+          mongodb)
+              TF_VAR_mgdb_instance_name="${TF_VAR_mgdb_instance_name}-${testId}"
+              export TF_VAR_machine_instance_name=$TF_VAR_mgdb_instance_name
+              ;;
           ycsb)
              #TF_VAR_security_group_name="${TF_VAR_security_group_name}-${testId}"
               TF_VAR_ycsb_instance_name="${TF_VAR_ycsb_instance_name}-${testId}"
-              ;;
-          cassandra)
-              TF_VAR_csdb_instance_name="${TF_VAR_csdb_instance_name}-${testId}"
               ;;
       esac
    done
@@ -47,7 +63,7 @@ function libiopstest() {
             _error "found existing $workspace (hint: try 'iopstest destroy $database $testId')"
          fi
 
-         for wkdir in common ycsb $database; do
+         for wkdir in common machine $database ycsb; do
 
             source="terraform-${wkdir}"
             if [[ "$wkdir" == "ycsb" ]]; then
