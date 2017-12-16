@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -e
+set -x
 
 function iopstest_command() {
 
@@ -23,6 +24,8 @@ function iopstest_command() {
    }
 
    ### start ###
+
+   local IOPSTEST_ROOT=$(pwd)
 
    for p in $*; do
       [[ $p =~ -h ]]     && _usage;

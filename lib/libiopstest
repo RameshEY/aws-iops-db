@@ -10,12 +10,14 @@ function libiopstest() {
    local database="$2"
    local testId="$3"
 
-   local workspace_root=".workspace"
+   local workspace_root="${IOPSTEST_ROOT}/.workspace"
    local workspace="${workspace_root}/${database}/${testId}"
 
    #
    # load the environment for any action
    #
+
+   cd $IOPSTEST_ROOT
 
    local wkdir
    for wkdir in common ycsb $database; do
@@ -67,7 +69,7 @@ function libiopstest() {
          terraform get
          terraform plan
          terraform apply
-         cd ..
+         cd -
          ;;
 
 
@@ -76,11 +78,11 @@ function libiopstest() {
          if [[ -f $workspace/terraform.tfstate ]]; then
             cd $workspace/
             terraform destroy
-            cd ..
+            cd -
          fi
 
          if [[ -d $workspace ]]; then
-            rm -Rf $workspace
+            echo rm -Rf $workspace
          fi
 
          # todo: if workspace_root is empty then remove workspace_root
