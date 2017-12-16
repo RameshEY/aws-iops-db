@@ -56,10 +56,10 @@ function iopstest_command() {
    local t
    for t in $testIds; do
 
-      options=$(cat $IOPSTEST_ROOT/conf/iopstest.conf | grep -v "^#" | grep "$database" | grep " $t " )
+      options=$(cat $IOPSTEST_CONFIG | grep -v "^#" | grep "$database" | grep " $t " )
 
       if [[ -z $options ]]; then
-         _error "test configuration not found in $iopstest_config_file"
+         _error "test configuration not found in $IOPSTEST_CONFIG"
       fi
 
       libiopstest $action $options
