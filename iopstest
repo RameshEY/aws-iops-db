@@ -1,131 +1,56 @@
 #!/bin/bash
 
 set -e
-set -x
 
-THIS=$1
+function iopstest_command() {
 
-function iopstest() {
+   function _usage() {
+     echo "usage: iopstest <action> <database> <test>,<test>,...<testN>"
+     exit 0
+   }
 
-   function debug() {
+   function _debug() {
      echo "debug: $*"
    }
 
-   function provision() {
-      local database="$1"
-
-      shift
-
-      local testIds="$*"
-            testIds=${testIds//,/ }  # replace commas w/ spaces
-            testIds=$(echo $testIds) # replace multiple spaces w/ one space
-
-      for t in $testIds; do
-        provision_test $database $t
-      done
+   function _error() {
+     echo "error: $*" >&2
+     exit 1
    }
 
-   provision_security_groups() {
-     :;
+   function _trace() {
+     echo "trace: $*"
    }
 
-   function provision_test() {
-      local database="$1"
-      local testId="$2"
+   ### start ###
 
-      workspace=".workspace/$database/$testId"
-      [[ -d $workspace ]] && rm -Rf $workspace
-      mkdir -p $workspace
+   for p in $*; do
+      [[ $p =~ -h ]]     && _usage;
+      [[ $p =~  help ]]  && _usage;
+      [[ $p =~  usage ]] && _usage;
+   done
 
-      for wkdir in common ycsb $database; do
+   local action="$1"
 
-         if [ -f specs/$wkdir/$wkdir.env.sh ]; then
-            source specs/$wkdir/$wkdir.env.sh
-         fi
+   (echo "provision destroy" | grep "$action") || \
+      _error "unsupported command action '$action'"
 
-         case $wkdir in
-            ycsb)
-               #TF_VAR_security_group_name="${TF_VAR_security_group_name}-${testId}"
-               TF_VAR_ycsb_instance_name="${TF_VAR_ycsb_instance_name}-${testId}"
-               ;;
-            cassandra)
-               TF_VAR_csdb_instance_name="${TF_VAR_csdb_instance_name}-${testId}"
-               ;;
-         esac
+   local database="$2"
 
-         source="terraform-${wkdir}"
-         if [[ "$wkdir" == "ycsb" ]]; then
-            source="terraform-YCSB"
-         fi;
-
-         mkdir -p $workspace/   # should be mkdir -p $workspace
-         cp $source/* $workspace/
-
-         # create or append to all spec tfvars into one terraform.tfvars
-         if [ -f specs/$wkdir/$wkdir.auto.tfvars ]; then
-            cat specs/$wkdir/$wkdir.auto.tfvars | tee -a $workspace/terraform.tfvars
-         fi
-
-      done
-
-      cd $workspace/
-      ls -l 
-      terraform init
-      terraform get
-      terraform plan
-      terraform apply
-      cd ..
-   }
-
-   function run() {
-      echo run: parameters are "$*"
-      :;
-   }
-
-   function destroy() {
-      local database="$1"
-      local testId="$2"
-
-      workspace=".workspace/$database/$testId"
-
-      for wkdir in common ycsb $database; do
-         if [ -f specs/$wkdir/$wkdir.env.sh ]; then
-            source specs/$wkdir/$wkdir.env.sh
-         fi
-      done
-
-      cd $workspace/
-      terraform destroy
-      cd ..
-   }
-
-   function usage() {
-      echo "usage: $THIS provision <database> <test>"
-   }
-
-   #
-   # parameter parsing
-   #
-
-   action=$1
    shift
+   shift
+   local testIds="$*"
+         testIds=${testIds//,/ }  # replace commas w/ spaces
+         testIds=$(echo $testIds) # replace multiple spaces w/ one space
 
-   case "$action" in
+   source lib/libiopstest
 
-     -h) action="usage"
-         ;;
+   local t
+   for t in $testIds; do
+      libiopstest $action $database $t
+   done
 
-      *)
-         ;;
-
-   esac
-
-   if [[ $(type -t "$action") -eq "function" ]]; then
-      $action $*
-   else
-      usage && exit 1
-   fi
-
+   exit 0
 }
 
-iopstest $*
+iopstest_command $*

@@ -1,0 +1,96 @@
+#!/bin/bash
+
+set -e
+
+function libiopstest() {
+
+   THISLIB=libiopstest
+
+   local action="$1"
+   local database="$2"
+   local testId="$3"
+
+   local workspace_root=".workspace"
+   local workspace="${workspace_root}/${database}/${testId}"
+
+   #
+   # load the environment for any action
+   #
+
+   local wkdir
+   for wkdir in common ycsb $database; do
+      if [[ -f specs/$wkdir/$wkdir.env.sh ]]; then
+         source specs/$wkdir/$wkdir.env.sh
+      fi
+      case $wkdir in
+          ycsb)
+             #TF_VAR_security_group_name="${TF_VAR_security_group_name}-${testId}"
+              TF_VAR_ycsb_instance_name="${TF_VAR_ycsb_instance_name}-${testId}"
+              ;;
+          cassandra)
+              TF_VAR_csdb_instance_name="${TF_VAR_csdb_instance_name}-${testId}"
+              ;;
+      esac
+   done
+
+   #
+   # take the action
+   #
+
+   case $action in
+
+      provision)
+
+         if [[ -d $workspace ]]; then
+            _error "found existing $workspace (hint: try 'iopstest destroy $database $testId')"
+         fi
+
+         for wkdir in common ycsb $database; do
+
+            source="terraform-${wkdir}"
+            if [[ "$wkdir" == "ycsb" ]]; then
+               source="terraform-YCSB"
+            fi;
+   
+            mkdir -p $workspace/   # should be mkdir -p $workspace
+            cp $source/* $workspace/
+   
+            # create or append to all spec tfvars into one terraform.tfvars
+            if [ -f specs/$wkdir/$wkdir.auto.tfvars ]; then
+               cat specs/$wkdir/$wkdir.auto.tfvars | tee -a $workspace/terraform.tfvars
+            fi
+         done
+
+         cd $workspace/
+         ls -l
+         terraform init
+         terraform get
+         terraform plan
+         terraform apply
+         cd ..
+         ;;
+
+
+      destroy)
+
+         if [[ -f $workspace/terraform.tfstate ]]; then
+            cd $workspace/
+            terraform destroy
+            cd ..
+         fi
+
+         if [[ -d $workspace ]]; then
+            rm -Rf $workspace
+         fi
+
+         # todo: if workspace_root is empty then remove workspace_root
+         ;;
+
+
+      *)
+        _error "unsupported $THISLIB action '$action'"
+        exit 1
+        ;;
+
+   esac
+}
