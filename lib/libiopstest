@@ -82,7 +82,7 @@ function libiopstest() {
          fi
 
          if [[ -d $workspace ]]; then
-            echo rm -Rf $workspace
+            rm -Rf $workspace
          fi
 
          # todo: if workspace_root is empty then remove workspace_root
