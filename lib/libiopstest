@@ -4,8 +4,6 @@ set -e
 
 function libiopstest() {
 
-   THISLIB=libiopstest
-
    local action="$1"
    local database="$2"
    local testId="$3"
@@ -106,7 +104,7 @@ function libiopstest() {
 
 
       *)
-        _error "unsupported $THISLIB action '$action'"
+        _error "unsupported libiopstest action '$action'"
         exit 1
         ;;
 
