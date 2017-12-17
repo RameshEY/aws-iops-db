@@ -1,4 +1,7 @@
 resource "aws_security_group" "database" {
+
+  depends_on = [ "data.aws_subnet.selected" ]
+
   name        = "${var.csdb_security_group_name}"
   description = "${var.csdb_security_group_name}"
   vpc_id      = "${var.csdb_vpc_id}"
@@ -40,7 +43,7 @@ resource "aws_security_group_rule" "database_ingress_tcp_9042_self" {
   from_port         = 9042
   to_port           = 9042
   protocol          = "tcp"
-  cidr_blocks       = "${var.csdb_source_cidr_block}"
+  cidr_blocks       = ["${data.aws_subnet.selected.cidr_block}"]
   type              = "ingress"
 }
 
@@ -50,7 +53,7 @@ resource "aws_security_group_rule" "database_ingress_tcp_9160_self" {
   from_port         = 9160
   to_port           = 9160
   protocol          = "tcp"
-  cidr_blocks       = "${var.csdb_source_cidr_block}"
+  cidr_blocks       = ["${data.aws_subnet.selected.cidr_block}"]
   type              = "ingress"
 }
 
@@ -60,6 +63,6 @@ resource "aws_security_group_rule" "database_ingress_tcp_7199_self" {
   from_port         = 7199
   to_port           = 7199
   protocol          = "tcp"
-  cidr_blocks       = "${var.csdb_source_cidr_block}"
+  cidr_blocks       = ["${data.aws_subnet.selected.cidr_block}"]
   type              = "ingress"
 }
