@@ -1,4 +1,7 @@
 resource "aws_security_group" "ycsb" {
+
+  depends_on = [ "data.aws_subnet.selected" ]
+
   name = "${var.ycsb_security_group_name}"
   description = "Allows all traffic"
   vpc_id      = "${var.ycsb_vpc_id}"
