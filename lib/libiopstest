@@ -23,11 +23,13 @@ function libiopstest() {
    for wkdir in common machine $database ycsb; do
       case $wkdir in
           machine)
+              # load TF_ variables associated with the machine parameter
               if [[ -f specs/$wkdir/$machine.env.sh ]]; then
                  source specs/$wkdir/$machine.env.sh
               fi
               ;;
           *)
+              # load TF_variables associated with component of the assembly
               if [[ -f specs/$wkdir/$wkdir.env.sh ]]; then
                  source specs/$wkdir/$wkdir.env.sh
               fi
@@ -61,6 +63,8 @@ function libiopstest() {
             _error "found existing $workspace (hint: try 'iopstest destroy $database $testId')"
          fi
 
+         mkdir -p $workspace/
+
          for wkdir in common machine $database ycsb; do
 
             source="terraform-${wkdir}"
@@ -68,8 +72,9 @@ function libiopstest() {
                source="terraform-YCSB"
             fi;
    
-            mkdir -p $workspace/   # should be mkdir -p $workspace
-            cp $source/* $workspace/
+            if [[ -d $source ]]; then
+               cp $source/* $workspace/
+            fi
    
             # create or append to all spec tfvars into one terraform.tfvars
             if [ -f specs/$wkdir/$wkdir.auto.tfvars ]; then
