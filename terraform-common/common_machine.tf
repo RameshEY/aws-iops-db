@@ -1,4 +1,14 @@
-resource "aws_instance" "machine" {
+data "aws_vpc" "selected" {
+  id = "${var.common_vpc_id}"
+}
+
+data "aws_subnet" "selected" {
+  id = "${var.common_subnet_id}"
+}
+
+resource "aws_instance" "database" {
+
+  count = 1
 
   ami                         = "${lookup(var.common_aws_amis, var.common_aws_region)}"
   key_name                    = "${var.common_key_name}"
@@ -7,8 +17,9 @@ resource "aws_instance" "machine" {
   instance_type               = "${var.machine_instance_type}"
   associate_public_ip_address = true
 
-# fixme need database details for this
-# security_groups             = ["${aws_security_group.database.id}"]
+  # provided by database implementation
+  # comment this line to let terraform compute the default 
+  security_groups = [ "${aws_security_group.database.id}" ]
 
   root_block_device {
     volume_size           = "${var.machine_root_volume_size}"
@@ -29,8 +40,20 @@ resource "aws_instance" "machine" {
   }
 
   connection {
-    user     = "${var.common_username}"
-    key_file = "${var.common_key_path}"
+    user        = "${var.common_username}"
+    private_key = "${var.common_key_path}"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "sudo mkfs -t xfs /dev/xvdh"
+    ]
+    connection {
+      type = "ssh"
+      host = "${aws_instance.database.public_ip}"
+      user = "${var.common_username}"
+      private_key = "${file("${var.common_key_path}")}"
+    }
   }
 
 }
