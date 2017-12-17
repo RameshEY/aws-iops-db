@@ -73,7 +73,7 @@ function libiopstest() {
             fi;
    
             if [[ -d $source ]]; then
-               cp $source/* $workspace/
+               cp -R $source/* $workspace/
             fi
    
             # create or append to all spec tfvars into one terraform.tfvars
