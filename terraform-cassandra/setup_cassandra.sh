@@ -11,13 +11,14 @@ sudo apt-get update
 sudo apt-get install -y zulu-8
 sudo apt-get install -y python-pip
 sudo pip install cassandra-driver
-echo "deb http://debian.datastax.com/community stable main" | sudo tee -a /etc/apt/sources.list.d/cassandra.sources.list
-curl -L https://debian.datastax.com/debian/repo_key | sudo apt-key add -
+
+echo "deb http://www.apache.org/dist/cassandra/debian 311x main" | sudo tee -a /etc/apt/sources.list.d/cassandra.sources.list
+curl https://www.apache.org/dist/cassandra/KEYS | sudo apt-key add -
 sudo apt-get update
-sudo apt-get install -y gcc libev4 libev-dev python-dev
-sudo apt-get install -y dsc30 -V
+sudo apt-key adv --keyserver pool.sks-keyservers.net --recv-key A278B781FE4B2BDA
+sudo apt-get install -y cassandra
 sudo apt-get install -y cassandra-tools
-sudo service cassandra stop
-sudo rm -rf /var/lib/cassandra/data/system/*
 
 sudo pip install cqlsh
+
+sudo service cassandra stop
