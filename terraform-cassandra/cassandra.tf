@@ -82,22 +82,13 @@ resource "null_resource" "cassandra" {
 
   provisioner "remote-exec" {
     inline = [
+      "sudo service cassandra stop",
+      "sudo rm -Rf /var/lib/cassandra/* /var/log/cassandra/*",
       "sudo cp -f /tmp/provisioning/cassandra.yaml /etc/cassandra/cassandra.yaml",
-      "sudo rm -Rf /var/lib/cassandra/*"
-    ]
-    connection {
-      type = "ssh"
-      host = "${aws_instance.database.public_ip}"
-      user = "${var.csdb_user_name}"
-      private_key = "${file("${var.csdb_key_path}")}"
-    }
-  }
-
-  provisioner "remote-exec" {
-    inline = [
       "sudo service cassandra force-reload",
       "ps -ef | grep cass",
-      "nodetool status"
+      "sleep 3",
+      "nodetool -h ${aws_instance.database.private_ip} status"
     ]
     connection {
       type = "ssh"
@@ -106,7 +97,6 @@ resource "null_resource" "cassandra" {
       private_key = "${file("${var.csdb_key_path}")}"
     }
   }
-
 
   /**
    * initialize
