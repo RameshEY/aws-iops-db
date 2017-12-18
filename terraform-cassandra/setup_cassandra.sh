@@ -1,28 +1,32 @@
 #!/bin/bash
 
-#create and mount the /var/lib/cassandra directory
+#create and mount the /var/lib/cassandra/data directory
 #NVME_DEVICE* is for the i3.4xlarge instance type
 #if $NVME_DEVICE_NAME or $DEVICE_NAME is available, create fs and mount that volume for /var/lib/cassandra
 #otherwise, /var/lib/cassandra uses the default root disk
 echo "Creating fs and mounting"
-sudo mkdir -p /var/lib/cassandra
+sudo mkdir -p /var/lib/cassandra/data
 DEVICE_NAME=/dev/xvdh
 NVME_DEVICE_NAME1=/dev/nvme0n1
 NVME_DEVICE_NAME2=/dev/nvme1n1
 NVME_DEVICENAME1=`echo $NVME_DEVICE_NAME1 | awk -F '/' '{print $3}'`
 NVMEDEVICEEXISTS=`lsblk |grep $NVME_DEVICENAME1 |wc -l`
 if [[ $NVMEDEVICEEXISTS == "1" ]]; then
+  sudo mkdir -p /var/lib/cassandra/data/data1
+  sudo mkdir -p /var/lib/cassandra/data/data2
   sudo mkfs.xfs $NVME_DEVICE_NAME1
-  sudo mount $NVME_DEVICE_NAME1 /var/lib/cassandra
-  sudo echo '/dev/nvme0n1 /var/lib/cassandra xfs defaults 0 0' >> /etc/fstab
+  sudo mount $NVME_DEVICE_NAME1 /var/lib/cassandra/data/data1
+  sudo echo '/dev/nvme0n1 /var/lib/cassandra/data/data1 xfs defaults 0 0' >> /etc/fstab
   sudo mkfs.xfs $NVME_DEVICE_NAME2
+  sudo mount $NVME_DEVICE_NAME2 /var/lib/cassandra/data/data2
+  sudo echo '/dev/nvme1n1 /var/lib/cassandra/data/data2 xfs defaults 0 0' >> /etc/fstab
 else
   DEVICENAME=`echo $DEVICE_NAME | awk -F '/' '{print $3}'`
   DEVICEEXISTS=`lsblk |grep $DEVICENAME |wc -l`
   if [[ $DEVICEEXISTS == "1" ]]; then
     sudo mkfs.xfs $DEVICE_NAME
-    sudo mount $DEVICE_NAME /var/lib/cassandra
-    sudo echo '/dev/xvdh /var/lib/cassandra xfs defaults 0 0' >> /etc/fstab
+    sudo mount $DEVICE_NAME /var/lib/cassandra/data
+    sudo echo '/dev/xvdh /var/lib/cassandra/data xfs defaults 0 0' >> /etc/fstab
   fi
 fi
 echo "Done creating fs and mounting"
@@ -50,24 +54,37 @@ if [ -z "${node}" ]; then
     node=0
 fi
 HELPMSG="The node id must be an integer between 0 and 2"
+function add_cassandra_config_for_data_striping () {
+    sudo sed -i "s/\/var\/lib\/cassandra\/data/\/var\/lib\/cassandra\/data\/data1\\
+    - \/var\/lib\/cassandra\/data\/data2/g" /etc/cassandra/cassandra.yaml
+}
 if [ $node == "0" ]; then
     sudo sed -i "s/cluster_name: 'Test Cluster'/cluster_name: 'kliu_cassandra_cluster'/g" /etc/cassandra/cassandra.yaml
     sudo sed -i "s/seeds: \"127.0.0.1\"/seeds: \"10.2.5.170\"/g" /etc/cassandra/cassandra.yaml
     sudo sed -i "s/listen_address: localhost/listen_address:/g" /etc/cassandra/cassandra.yaml
     sudo sed -i "s/rpc_address: localhost/rpc_address: 0.0.0.0/g" /etc/cassandra/cassandra.yaml
     sudo sed -i "s/# broadcast_rpc_address: 1.2.3.4/broadcast_rpc_address: 10.2.5.170/g" /etc/cassandra/cassandra.yaml
+    if [[ $NVMEDEVICEEXISTS == "1" ]]; then
+	add_cassandra_config_for_data_striping
+    fi
 elif [ $node = "1" ]; then
     sudo sed -i "s/cluster_name: 'Test Cluster'/cluster_name: 'kliu_cassandra_cluster'/g" /etc/cassandra/cassandra.yaml
     sudo sed -i "s/seeds: \"127.0.0.1\"/seeds: \"i10.2.5.170,10.2.5.171\"/g" /etc/cassandra/cassandra.yaml
     sudo sed -i "s/listen_address: localhost/listen_address:/g" /etc/cassandra/cassandra.yaml
     sudo sed -i "s/rpc_address: localhost/rpc_address: 0.0.0.0/g" /etc/cassandra/cassandra.yaml
     sudo sed -i "s/# broadcast_rpc_address: 1.2.3.4/broadcast_rpc_address: 10.2.5.171/g" /etc/cassandra/cassandra.yaml
+    if [[ $NVMEDEVICEEXISTS == "1" ]]; then
+	add_cassandra_config_for_data_striping
+    fi
 elif [ $node = "2" ]; then
     sudo sed -i "s/cluster_name: 'Test Cluster'/cluster_name: 'kliu_cassandra_cluster'/g" /etc/cassandra/cassandra.yaml
     sudo sed -i "s/seeds: \"127.0.0.1\"/seeds: \"10.2.5.170,10.2.5.171,10.2.5.172\"/g" /etc/cassandra/cassandra.yaml
     sudo sed -i "s/listen_address: localhost/listen_address:/g" /etc/cassandra/cassandra.yaml
     sudo sed -i "s/rpc_address: localhost/rpc_address: 0.0.0.0/g" /etc/cassandra/cassandra.yaml
     sudo sed -i "s/# broadcast_rpc_address: 1.2.3.4/broadcast_rpc_address: 10.2.5.172/g" /etc/cassandra/cassandra.yaml
+    if [[ $NVMEDEVICEEXISTS == "1" ]]; then
+	add_cassandra_config_for_data_striping
+    fi
 else
     echo "$HELPMSG"
     exit 1
