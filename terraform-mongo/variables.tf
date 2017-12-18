@@ -5,7 +5,7 @@ variable "mongodb_version" {
 }
 
 variable "mongodb_basedir" {
-  default = "/data/db"
+  default = "/mongo"
 }
 
 variable "mongodb_conf_logpath" {

@@ -40,7 +40,7 @@ if [ "${config_ebs}" == "true" ]; then
   #
   # IMPORTANT: only format the volume if uninitialized (i.e. first boot for a fresh volume)
   #
-  parted /dev/xvdz print || mkfs.ext4 -L opt /dev/xvdz
+  parted /dev/xvdz print || mkfs.xfs -L opt /dev/xvdz
   mount LABEL=opt /opt
 fi
 
@@ -72,14 +72,14 @@ echo 8 > /sys/class/block/${DEVICE_NAME}/queue/read_ahead_kb
 
 # shorter keepalives, 120s recommended for MongoDB in official docs:
 # https://docs.mongodb.org/manual/faq/diagnostics/#does-tcp-keepalive-time-affect-mongodb-deployments
-sysctl -w net.ipv4.tcp_keepalive_time=120
-cat << EOF > /etc/sysctl.conf
-net.ipv4.tcp_keepalive_time = 120
-fs.file-max = 65536
-vm.dirty_ratio=15
-vm.dirty_background_ratio=5
-vm.swapiness=0
-vm.zone_reclaim_mode = 0
+# sysctl -w net.ipv4.tcp_keepalive_time=120
+# cat << EOF > /etc/sysctl.conf
+# net.ipv4.tcp_keepalive_time = 120
+# fs.file-max = 65536
+# vm.dirty_ratio=15
+# vm.dirty_background_ratio=5
+# vm.swapiness=0
+# vm.zone_reclaim_mode = 0
 EOF
 sysctl -p
 
@@ -134,6 +134,9 @@ storage:
   journal:
     enabled: true
   engine: ${mongodb_conf_engine}
+  ${mongodb_conf_engine}:
+   engineConfig:
+    cacheSizeGB: 30  
 
 systemLog:
   destination: file
@@ -152,7 +155,7 @@ EOF
   service mongod stop
   service mongod start
 
-  numactl --interleave=all mongod 
+  numactl --interleave=all mongod
 
 
 
