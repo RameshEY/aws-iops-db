@@ -125,9 +125,7 @@ resource "null_resource" "cassandra" {
 
   provisioner "remote-exec" {
     inline = [
-      "sleep 2",
-      "nodetool status",
-      "cat /tmp/provisioning/init_cassandra.cql | cqlsh --cqlversion=3.4.0 ${aws_instance.database.private_ip}",
+      "cat /tmp/provisioning/init_cassandra.cql | cqlsh --cqlversion=3.4.0 ${aws_instance.database.private_ip}"
     ]
     connection {
       type = "ssh"
