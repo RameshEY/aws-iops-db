@@ -134,6 +134,9 @@ storage:
   journal:
     enabled: true
   engine: ${mongodb_conf_engine}
+  ${mongodb_conf_engine}:
+   engineConfig:
+    cacheSizeGB: 30  
 
 systemLog:
   destination: file
