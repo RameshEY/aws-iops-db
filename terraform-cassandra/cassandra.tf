@@ -1,44 +1,38 @@
-resource "aws_instance" "database" {
+resource "null_resource" "cassandra" {
 
-  instance_type = "${var.csdb_instance_type}"
-  ami = "${var.csdb_ami}"
-  key_name = "${var.csdb_key_name}"
+  depends_on = [ "aws_instance.database" ]
 
-  subnet_id = "${var.csdb_subnet_id}"
-
-/*
-  private_ip = "${var.csdb_cassandra0_ip}"
-  subnet_id = "${aws_subnet.main.id}"
-  vpc_security_group_ids = ["${module.cassandra_security_group.security_group_id}", "${aws_security_group.allow_internet_access.id}", "${aws_security_group.allow_all_ssh_access.id}"]
-  depends_on = ["aws_internet_gateway.gw"]
-*/
-
-  tags {
-    Name = "${var.csdb_instance_name}"
-  }
-
-  security_groups = [ "${aws_security_group.database.id}"]
-
-  root_block_device {
-    volume_size = "${var.csdb_root_block_size}"
-    volume_type = "${var.csdb_root_block_type}"
-    delete_on_termination = true
-  }
-
-  ebs_block_device {
-    device_name = "${var.csdb_ebs_device_name}"
-    volume_size = "${var.csdb_ebs_volume_size}"
-    volume_type = "${var.csdb_ebs_type}"
-    iops = "${var.csdb_ebs_iops}"
-    delete_on_termination = true
-  }
-
+  /**
+   * setup data mount
+   */
+  
   provisioner "remote-exec" {
-    inline = ["sudo mkdir -p /tmp/provisioning",
-      "sudo chown -R ubuntu:ubuntu  /tmp/provisioning/"]
+    inline = [
+      "sudo mkdir -p /var/lib/cassandra",
+      "sudo mount /dev/xvdh /var/lib/cassandra",
+      "echo '/dev/xvdh /var/lib/cassandra ext4 defaults 0 0' | sudo tee -a /etc/fstab"
+    ]
     connection {
       type = "ssh"
-      user = "ubuntu"
+      host = "${aws_instance.database.public_ip}"
+      user = "${var.csdb_user_name}"
+      private_key = "${file("${var.csdb_key_path}")}"
+    }
+  }
+
+  /**
+   * setup provisioning folder
+   */
+
+  provisioner "remote-exec" {
+    inline = [
+      "sudo mkdir -p /tmp/provisioning",
+      "sudo chown -R ${var.csdb_user_name}:${var.csdb_user_name} /tmp/provisioning/"
+    ]
+    connection {
+      type = "ssh"
+      host = "${aws_instance.database.public_ip}"
+      user = "${var.csdb_user_name}"
       private_key = "${file("${var.csdb_key_path}")}"
     }
   }
@@ -48,141 +42,88 @@ resource "aws_instance" "database" {
     destination = "/tmp/provisioning/setup_cassandra.sh"
     connection {
       type = "ssh"
-      user = "ubuntu"
+      host = "${aws_instance.database.public_ip}"
+      user = "${var.csdb_user_name}"
       private_key = "${file("${var.csdb_key_path}")}"
     }
   }
 
   provisioner "remote-exec" {
-    inline = ["sudo chmod ugo+x /tmp/provisioning/setup_cassandra.sh",
-      "sudo /tmp/provisioning/setup_cassandra.sh 0"]
+    inline = [
+      "sudo chmod ugo+x /tmp/provisioning/setup_cassandra.sh",
+      "sudo /tmp/provisioning/setup_cassandra.sh 0"
+    ]
     connection {
       type = "ssh"
-      user = "ubuntu"
+      host = "${aws_instance.database.public_ip}"
+      user = "${var.csdb_user_name}"
       private_key = "${file("${var.csdb_key_path}")}"
     }
   }
 
-}
-
-
-# uncomment below sections if there are other nodes in the Cassandra cluster, e.g. 2-3 nodes
-/*
-resource "aws_instance" "cassandra_1" {
-  instance_type = "${var.csdb_instance_type}"
-  ami = "${var.csdb_ami}"
-  key_name = "${var.csdb_key_name}"
-  private_ip = "${var.csdb_cassandra1_ip}"
-  subnet_id = "${aws_subnet.main.id}"
-  vpc_security_group_ids = ["${module.cassandra_security_group.security_group_id}", "${aws_security_group.allow_internet_access.id}", "${aws_security_group.allow_all_ssh_access.id}"]
-  depends_on = ["aws_internet_gateway.gw", "aws_instance.cassandra_0"]
-
-  tags {
-    Name = "${var.csdb_user_prefix}_${var.csdb_user_name}_cassandra_1"
-  }
-
-  root_block_device {
-    volume_size = "${var.csdb_root_block_size}"
-    volume_type = "${var.csdb_root_block_type}"
-    delete_on_termination = true
-  }
-
-  ebs_block_device {
-    device_name = "${var.csdb_ebs_device_name}"
-    volume_size = "${var.csdb_ebs_volume_size}"
-    volume_type = "${var.csdb_ebs_type}"
-    iops = "${var.csdb_ebs_iops}"
-    delete_on_termination = true
-  }
-
-  provisioner "remote-exec" {
-    inline = ["sudo mkdir -p /tmp/provisioning",
-      "sudo chown -R ubuntu:ubuntu  /tmp/provisioning/"]
-    connection {
-      type = "ssh"
-      user = "ubuntu"
-      private_key = "${file("${var.csdb_key_path}")}"
-    }
-  }
+  /**
+   * config for test
+   */
 
   provisioner "file" {
-    source = "setup_cassandra.sh"
-    destination = "/tmp/provisioning/setup_cassandra.sh"
+    source = "${template_dir.database_config.destination_dir}/etc/cassandra/cassandra.yaml"
+    destination = "/tmp/provisioning/cassandra.yaml"
     connection {
       type = "ssh"
-      user = "ubuntu"
+      host = "${aws_instance.database.public_ip}"
+      user = "${var.csdb_user_name}"
       private_key = "${file("${var.csdb_key_path}")}"
     }
   }
+
+  /**
+   * service start
+   */
 
   provisioner "remote-exec" {
-    inline = ["sudo chmod ugo+x /tmp/provisioning/setup_cassandra.sh",
-      "sudo /tmp/provisioning/setup_cassandra.sh 1"]
+    inline = [
+      "sudo service cassandra stop",
+      "sudo rm -Rf /var/lib/cassandra/* /var/log/cassandra/*",
+      "sudo cp -f /tmp/provisioning/cassandra.yaml /etc/cassandra/cassandra.yaml",
+      "sudo service cassandra force-reload",
+      "ps -ef | grep cass",
+      "sleep 3",
+      "nodetool -h ${aws_instance.database.private_ip} status"
+    ]
     connection {
       type = "ssh"
-      user = "ubuntu"
+      host = "${aws_instance.database.public_ip}"
+      user = "${var.csdb_user_name}"
       private_key = "${file("${var.csdb_key_path}")}"
     }
   }
 
-}
-
-resource "aws_instance" "cassandra_2" {
-  instance_type = "${var.csdb_instance_type}"
-  ami = "${var.csdb_ami}"
-  key_name = "${var.csdb_key_name}"
-  private_ip = "${var.csdb_cassandra2_ip}"
-  subnet_id = "${aws_subnet.main.id}"
-  vpc_security_group_ids = ["${module.cassandra_security_group.security_group_id}", "${aws_security_group.allow_internet_access.id}", "${aws_security_group.allow_all_ssh_access.id}"]
-  depends_on = ["aws_internet_gateway.gw", "aws_instance.cassandra_1"]
-
-  tags {
-    Name = "${var.csdb_user_prefix}_${var.csdb_user_name}_cassandra_2"
-  }
-
-  root_block_device {
-    volume_size = "${var.csdb_root_block_size}"
-    volume_type = "${var.csdb_root_block_type}"
-    delete_on_termination = true
-  }
-
-  ebs_block_device {
-    device_name = "${var.csdb_ebs_device_name}"
-    volume_size = "${var.csdb_ebs_volume_size}"
-    volume_type = "${var.csdb_ebs_type}"
-    iops = "${var.csdb_ebs_iops}"
-    delete_on_termination = true
-  }
-
-  provisioner "remote-exec" {
-    inline = ["sudo mkdir -p /tmp/provisioning",
-      "sudo chown -R ubuntu:ubuntu  /tmp/provisioning/"]
-    connection {
-      type = "ssh"
-      user = "ubuntu"
-      private_key = "${file("${var.csdb_key_path}")}"
-    }
-  }
+  /**
+   * initialize
+   */
 
   provisioner "file" {
-    source = "setup_cassandra.sh"
-    destination = "/tmp/provisioning/setup_cassandra.sh"
+    source = "init_cassandra.cql"
+    destination = "/tmp/provisioning/init_cassandra.cql"
     connection {
       type = "ssh"
-      user = "ubuntu"
+      host = "${aws_instance.database.public_ip}"
+      user = "${var.csdb_user_name}"
       private_key = "${file("${var.csdb_key_path}")}"
     }
   }
 
   provisioner "remote-exec" {
-    inline = ["sudo chmod ugo+x /tmp/provisioning/setup_cassandra.sh",
-      "sudo /tmp/provisioning/setup_cassandra.sh 2"]
+    inline = [
+      "cat /tmp/provisioning/init_cassandra.cql | cqlsh --cqlversion=3.4.0 ${aws_instance.database.private_ip}"
+    ]
     connection {
       type = "ssh"
-      user = "ubuntu"
+      host = "${aws_instance.database.public_ip}"
+      user = "${var.csdb_user_name}"
       private_key = "${file("${var.csdb_key_path}")}"
     }
   }
 
+
 }
-*/

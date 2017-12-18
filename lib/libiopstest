@@ -1,0 +1,117 @@
+#!/bin/bash
+
+set -e
+
+function libiopstest() {
+
+   local action="$1"
+   local database="$2"
+   local testId="$3"
+   local machine="$4"
+   local workload="$5"
+
+   local workspace_root="${IOPSTEST_ROOT}/.workspace"
+   local workspace="${workspace_root}/${database}/${testId}"
+
+   #
+   # load the environment for any action
+   #
+
+   cd $IOPSTEST_ROOT
+
+   local wkdir
+   for wkdir in common machine $database ycsb; do
+      case $wkdir in
+          machine)
+              # load TF_ variables associated with the machine parameter
+              if [[ -f specs/$wkdir/$machine.env.sh ]]; then
+                 source specs/$wkdir/$machine.env.sh
+              fi
+              ;;
+          *)
+              # load TF_variables associated with component of the assembly
+              if [[ -f specs/$wkdir/$wkdir.env.sh ]]; then
+                 source specs/$wkdir/$wkdir.env.sh
+              fi
+              ;;
+      esac
+      case $wkdir in
+          cassandra)
+              TF_VAR_csdb_instance_name="${TF_VAR_csdb_instance_name}-${testId}"
+              export TF_VAR_machine_instance_name=$TF_VAR_csdb_instance_name
+              ;;
+          mongodb)
+              TF_VAR_mgdb_instance_name="${TF_VAR_mgdb_instance_name}-${testId}"
+              export TF_VAR_machine_instance_name=$TF_VAR_mgdb_instance_name
+              ;;
+          ycsb)
+             #TF_VAR_security_group_name="${TF_VAR_security_group_name}-${testId}"
+              TF_VAR_ycsb_instance_name="${TF_VAR_ycsb_instance_name}-${testId}"
+              ;;
+      esac
+   done
+
+   #
+   # take the action
+   #
+
+   case $action in
+
+      provision)
+
+         if [[ -d $workspace ]]; then
+            _error "found existing $workspace (hint: try 'iopstest destroy $database $testId')"
+         fi
+
+         mkdir -p $workspace/
+
+         for wkdir in common machine $database ycsb; do
+
+            source="terraform-${wkdir}"
+            if [[ "$wkdir" == "ycsb" ]]; then
+               source="terraform-YCSB"
+            fi;
+   
+            if [[ -d $source ]]; then
+               cp -R $source/* $workspace/
+            fi
+   
+            # create or append to all spec tfvars into one terraform.tfvars
+            if [ -f specs/$wkdir/$wkdir.auto.tfvars ]; then
+               cat specs/$wkdir/$wkdir.auto.tfvars | tee -a $workspace/terraform.tfvars
+            fi
+         done
+
+         cd $workspace/
+         ls -l
+         terraform init
+         terraform get
+         terraform plan
+         terraform apply
+         cd -
+         ;;
+
+
+      destroy)
+
+         if [[ -f $workspace/terraform.tfstate ]]; then
+            cd $workspace/
+            terraform destroy
+            cd -
+         fi
+
+         if [[ -d $workspace ]]; then
+            rm -Rf $workspace
+         fi
+
+         # todo: if workspace_root is empty then remove workspace_root
+         ;;
+
+
+      *)
+        _error "unsupported libiopstest action '$action'"
+        exit 1
+        ;;
+
+   esac
+}
