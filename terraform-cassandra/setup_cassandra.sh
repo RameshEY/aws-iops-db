@@ -1,11 +1,11 @@
 #!/bin/bash
 
-#create and mount the /var/lib/cassandra directory
+#create and mount the /var/lib/cassandra/data directory
 #NVME_DEVICE* is for the i3.4xlarge instance type
 #if $NVME_DEVICE_NAME or $DEVICE_NAME is available, create fs and mount that volume for /var/lib/cassandra
 #otherwise, /var/lib/cassandra uses the default root disk
 echo "Creating fs and mounting"
-sudo mkdir -p /var/lib/cassandra
+sudo mkdir -p /var/lib/cassandra/data
 DEVICE_NAME=/dev/xvdh
 NVME_DEVICE_NAME1=/dev/nvme0n1
 NVME_DEVICE_NAME2=/dev/nvme1n1
@@ -13,16 +13,16 @@ NVME_DEVICENAME1=`echo $NVME_DEVICE_NAME1 | awk -F '/' '{print $3}'`
 NVMEDEVICEEXISTS=`lsblk |grep $NVME_DEVICENAME1 |wc -l`
 if [[ $NVMEDEVICEEXISTS == "1" ]]; then
   sudo mkfs.xfs $NVME_DEVICE_NAME1
-  sudo mount $NVME_DEVICE_NAME1 /var/lib/cassandra
-  sudo echo '/dev/nvme0n1 /var/lib/cassandra xfs defaults 0 0' >> /etc/fstab
+  sudo mount $NVME_DEVICE_NAME1 /var/lib/cassandra/data
+  sudo echo '/dev/nvme0n1 /var/lib/cassandra/data xfs defaults 0 0' >> /etc/fstab
   sudo mkfs.xfs $NVME_DEVICE_NAME2
 else
   DEVICENAME=`echo $DEVICE_NAME | awk -F '/' '{print $3}'`
   DEVICEEXISTS=`lsblk |grep $DEVICENAME |wc -l`
   if [[ $DEVICEEXISTS == "1" ]]; then
     sudo mkfs.xfs $DEVICE_NAME
-    sudo mount $DEVICE_NAME /var/lib/cassandra
-    sudo echo '/dev/xvdh /var/lib/cassandra xfs defaults 0 0' >> /etc/fstab
+    sudo mount $DEVICE_NAME /var/lib/cassandra/data
+    sudo echo '/dev/xvdh /var/lib/cassandra/data xfs defaults 0 0' >> /etc/fstab
   fi
 fi
 echo "Done creating fs and mounting"
