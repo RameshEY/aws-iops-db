@@ -12,17 +12,17 @@ NVME_DEVICE_NAME2=/dev/nvme1n1
 NVME_DEVICENAME1=`echo $NVME_DEVICE_NAME1 | awk -F '/' '{print $3}'`
 NVMEDEVICEEXISTS=`lsblk |grep $NVME_DEVICENAME1 |wc -l`
 if [[ $NVMEDEVICEEXISTS == "1" ]]; then
-  sudo mkfs -t ext4 $NVME_DEVICE_NAME1
+  sudo mkfs.xfs $NVME_DEVICE_NAME1
   sudo mount $NVME_DEVICE_NAME1 /var/lib/cassandra
-  sudo echo '/dev/nvme0n1 /var/lib/cassandra ext4 defaults 0 0' >> /etc/fstab
-  sudo mkfs -t ext4 $NVME_DEVICE_NAME2
+  sudo echo '/dev/nvme0n1 /var/lib/cassandra xfs defaults 0 0' >> /etc/fstab
+  sudo mkfs.xfs $NVME_DEVICE_NAME2
 else
   DEVICENAME=`echo $DEVICE_NAME | awk -F '/' '{print $3}'`
   DEVICEEXISTS=`lsblk |grep $DEVICENAME |wc -l`
   if [[ $DEVICEEXISTS == "1" ]]; then
-    sudo mkfs -t ext4 $DEVICE_NAME
+    sudo mkfs.xfs $DEVICE_NAME
     sudo mount $DEVICE_NAME /var/lib/cassandra
-    sudo echo '/dev/xvdh /var/lib/cassandra ext4 defaults 0 0' >> /etc/fstab
+    sudo echo '/dev/xvdh /var/lib/cassandra xfs defaults 0 0' >> /etc/fstab
   fi
 fi
 echo "Done creating fs and mounting"
@@ -35,11 +35,12 @@ sudo apt-get update
 sudo apt-get install -y zulu-8
 sudo apt-get install -y python-pip
 sudo pip install cassandra-driver
-echo "deb http://debian.datastax.com/community stable main" | sudo tee -a /etc/apt/sources.list.d/cassandra.sources.list
-curl -L https://debian.datastax.com/debian/repo_key | sudo apt-key add -
+
+echo "deb http://www.apache.org/dist/cassandra/debian 311x main" | sudo tee -a /etc/apt/sources.list.d/cassandra.sources.list
+curl https://www.apache.org/dist/cassandra/KEYS | sudo apt-key add -
 sudo apt-get update
-sudo apt-get install -y gcc libev4 libev-dev python-dev
-sudo apt-get install -y dsc30 -V
+sudo apt-key adv --keyserver pool.sks-keyservers.net --recv-key A278B781FE4B2BDA
+sudo apt-get install -y cassandra
 sudo apt-get install -y cassandra-tools
 sudo service cassandra stop
 sudo rm -rf /var/lib/cassandra/data/system/*
