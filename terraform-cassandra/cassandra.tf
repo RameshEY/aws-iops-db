@@ -21,7 +21,7 @@ resource "null_resource" "cassandra" {
   }
 
   /**
-   * setup provisioning folder
+   * installation and provisioning database
    */
 
   provisioner "remote-exec" {
@@ -29,6 +29,28 @@ resource "null_resource" "cassandra" {
       "sudo mkdir -p /tmp/provisioning",
       "sudo chown -R ${var.csdb_user_name}:${var.csdb_user_name} /tmp/provisioning/"
     ]
+    connection {
+      type = "ssh"
+      host = "${aws_instance.database.public_ip}"
+      user = "${var.csdb_user_name}"
+      private_key = "${file("${var.csdb_key_path}")}"
+    }
+  }
+
+  provisioner "file" {
+    source = "init_cassandra.cql"
+    destination = "/tmp/provisioning/init_cassandra.cql"
+    connection {
+      type = "ssh"
+      host = "${aws_instance.database.public_ip}"
+      user = "${var.csdb_user_name}"
+      private_key = "${file("${var.csdb_key_path}")}"
+    }
+  }
+
+  provisioner "file" {
+    source = "install_cassandra.sh"
+    destination = "/tmp/provisioning/install_cassandra.sh"
     connection {
       type = "ssh"
       host = "${aws_instance.database.public_ip}"
@@ -48,23 +70,6 @@ resource "null_resource" "cassandra" {
     }
   }
 
-  provisioner "remote-exec" {
-    inline = [
-      "sudo chmod ugo+x /tmp/provisioning/setup_cassandra.sh",
-      "sudo /tmp/provisioning/setup_cassandra.sh 0"
-    ]
-    connection {
-      type = "ssh"
-      host = "${aws_instance.database.public_ip}"
-      user = "${var.csdb_user_name}"
-      private_key = "${file("${var.csdb_key_path}")}"
-    }
-  }
-
-  /**
-   * config for test
-   */
-
   provisioner "file" {
     source = "${template_dir.database_config.destination_dir}/etc/cassandra/cassandra.yaml"
     destination = "/tmp/provisioning/cassandra.yaml"
@@ -76,19 +81,12 @@ resource "null_resource" "cassandra" {
     }
   }
 
-  /**
-   * service start
-   */
-
   provisioner "remote-exec" {
     inline = [
-      "sudo service cassandra stop",
-      "sudo rm -Rf /var/lib/cassandra/* /var/log/cassandra/*",
-      "sudo cp -f /tmp/provisioning/cassandra.yaml /etc/cassandra/cassandra.yaml",
-      "sudo service cassandra force-reload",
-      "ps -ef | grep cass",
-      "sleep 3",
-      "nodetool -h ${aws_instance.database.private_ip} status"
+      "sudo chmod ugo+x /tmp/provisioning/install_cassandra.sh",
+      "sudo chmod ugo+x /tmp/provisioning/setup_cassandra.sh",
+      "sudo /tmp/provisioning/install_cassandra.sh",
+      "sudo /tmp/provisioning/setup_cassandra.sh"
     ]
     connection {
       type = "ssh"
@@ -97,33 +95,5 @@ resource "null_resource" "cassandra" {
       private_key = "${file("${var.csdb_key_path}")}"
     }
   }
-
-  /**
-   * initialize
-   */
-
-  provisioner "file" {
-    source = "init_cassandra.cql"
-    destination = "/tmp/provisioning/init_cassandra.cql"
-    connection {
-      type = "ssh"
-      host = "${aws_instance.database.public_ip}"
-      user = "${var.csdb_user_name}"
-      private_key = "${file("${var.csdb_key_path}")}"
-    }
-  }
-
-  provisioner "remote-exec" {
-    inline = [
-      "cat /tmp/provisioning/init_cassandra.cql | cqlsh --cqlversion=3.4.0 ${aws_instance.database.private_ip}"
-    ]
-    connection {
-      type = "ssh"
-      host = "${aws_instance.database.public_ip}"
-      user = "${var.csdb_user_name}"
-      private_key = "${file("${var.csdb_key_path}")}"
-    }
-  }
-
 
 }
