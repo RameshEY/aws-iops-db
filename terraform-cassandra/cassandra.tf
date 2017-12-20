@@ -8,9 +8,9 @@ resource "null_resource" "cassandra" {
   
   provisioner "remote-exec" {
     inline = [
-      "sudo mkdir -p /var/lib/cassandra",
-      "sudo mount /dev/xvdh /var/lib/cassandra",
-      "echo '/dev/xvdh /var/lib/cassandra ext4 defaults 0 0' | sudo tee -a /etc/fstab"
+      "sudo mkdir -p /var/lib/cassandra/data",
+      "sudo mount /dev/xvdh /var/lib/cassandra/data",
+      "echo '/dev/xvdh /var/lib/cassandra xfs defaults 0 0' | sudo tee -a /etc/fstab"
     ]
     connection {
       type = "ssh"
