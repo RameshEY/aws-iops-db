@@ -38,14 +38,16 @@ function libiopstest() {
       case $wkdir in
           cassandra)
               TF_VAR_csdb_instance_name="${TF_VAR_csdb_instance_name}-${testId}"
+              TF_VAR_csdb_security_group_name="${TF_VAR_csdb_security_group_name}-${testId}"
               export TF_VAR_machine_instance_name=$TF_VAR_csdb_instance_name
               ;;
           mongodb)
               TF_VAR_mgdb_instance_name="${TF_VAR_mgdb_instance_name}-${testId}"
+              TF_VAR_mgdb_security_group_name="${TF_VAR_mgdb_security_group_name}-${testId}"
               export TF_VAR_machine_instance_name=$TF_VAR_mgdb_instance_name
               ;;
           ycsb)
-             #TF_VAR_security_group_name="${TF_VAR_security_group_name}-${testId}"
+              TF_VAR_ycsb_security_group_name="${TF_VAR_ycsb_security_group_name}-${testId}"
               TF_VAR_ycsb_instance_name="${TF_VAR_ycsb_instance_name}-${testId}"
               ;;
       esac
@@ -71,11 +73,11 @@ function libiopstest() {
             if [[ "$wkdir" == "ycsb" ]]; then
                source="terraform-YCSB"
             fi;
-   
+
             if [[ -d $source ]]; then
                cp -R $source/* $workspace/
             fi
-   
+
             # create or append to all spec tfvars into one terraform.tfvars
             if [ -f specs/$wkdir/$wkdir.auto.tfvars ]; then
                cat specs/$wkdir/$wkdir.auto.tfvars | tee -a $workspace/terraform.tfvars
