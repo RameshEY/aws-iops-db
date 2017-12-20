@@ -74,6 +74,10 @@ function libiopstest() {
                source="terraform-YCSB"
             fi;
 
+            if [[ "$wkdir" == "mongodb" ]]; then
+               source="terraform-mongo"
+            fi;
+
             if [[ -d $source ]]; then
                cp -R $source/* $workspace/
             fi
