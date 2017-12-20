@@ -1,3 +1,22 @@
+variable mgdb_security_group_name { }
+variable mgdb_vpc_id { }
+
+variable "mgdb_user_name" { }
+variable "mgdb_key_name" { }
+variable "mgdb_key_path" { }
+
+variable "mongodb_username" { }
+variable "mongodb_version" { }
+variable "mongodb_basedir" { }
+variable "mongodb_conf_logpath" { }
+variable "mongodb_conf_engine" { }
+
+variable "mgdb_aws_region" { }
+variable "config_ephemeral" { }
+variable "config_ebs" { }
+
+/*
+
 variable "name" {}
 
 variable "mongodb_version" {
@@ -35,3 +54,4 @@ variable "config_ephemeral" {
 variable "config_ebs" {
   default = "true"
 }
+*/

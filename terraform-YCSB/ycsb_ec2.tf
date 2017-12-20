@@ -58,4 +58,26 @@ resource "aws_instance" "ycsb" {
     ]
   }
 
+  #
+  # provision and run ycsb_run_test.sh (provided by database)
+  #
+
+  provisioner "file" {
+    source = "./ycsb_run_test.sh"
+    destination = "/home/${var.ycsb_username}/ycsb_run_test.sh"
+    connection {
+      type = "ssh"
+      user = "${var.ycsb_username}"
+      private_key = "${file("${var.ycsb_key_path}")}"
+    }
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "chmod u+x /home/${var.ycsb_username}/ycsb_run_test.sh",
+      "(/home/${var.ycsb_username}/ycsb_run_test.sh ${aws_instance.database.private_ip}) 2>&1 | tee /home/${var.ycsb_username}/ycsb_run_test.log"
+    ]
+  }
+
+
 }
