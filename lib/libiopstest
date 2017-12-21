@@ -47,8 +47,8 @@ function libiopstest() {
               export TF_VAR_machine_instance_name=$TF_VAR_mgdb_instance_name
               ;;
           ycsb)
-              TF_VAR_ycsb_security_group_name="${TF_VAR_ycsb_security_group_name}-${testId}"
-              TF_VAR_ycsb_instance_name="${TF_VAR_ycsb_instance_name}-${testId}"
+              TF_VAR_ycsb_security_group_name="${TF_VAR_ycsb_security_group_name}-${database}-${testId}"
+              TF_VAR_ycsb_instance_name="${TF_VAR_ycsb_instance_name}-${database}-${testId}"
               ;;
       esac
    done
