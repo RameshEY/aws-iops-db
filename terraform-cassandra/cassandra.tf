@@ -81,6 +81,17 @@ resource "null_resource" "cassandra" {
     }
   }
 
+  provisioner "file" {
+    source = "${template_dir.database_config.destination_dir}/etc/cassandra/cassandra-env.sh"
+    destination = "/tmp/provisioning/cassandra-env.sh"
+    connection {
+      type = "ssh"
+      host = "${aws_instance.database.public_ip}"
+      user = "${var.csdb_user_name}"
+      private_key = "${file("${var.csdb_key_path}")}"
+    }
+  }
+
   provisioner "remote-exec" {
     inline = [
       "sudo chmod ugo+x /tmp/provisioning/install_cassandra.sh",
