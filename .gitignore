@@ -1,4 +1,4 @@
 Makefile
-iopstest-site
+iopstest-*
 .workspace
 *.swp
