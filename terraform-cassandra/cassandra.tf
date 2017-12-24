@@ -82,7 +82,7 @@ resource "null_resource" "cassandra" {
   }
 
   provisioner "file" {
-    source = "${template_dir.database_config.destination_dir}/etc/cassandra/cassandra-env.sh"
+    source = "cassandra-env.sh"
     destination = "/tmp/provisioning/cassandra-env.sh"
     connection {
       type = "ssh"
