@@ -13,12 +13,23 @@ set -x
 
 
 datatase_private_id=$1
+desired_workload=$2
 
-sleep 10
+function check_readiness {
+   true;
+}
 
-ycsb load cassandra-cql  -s \
+check_readiness;
+
+export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64/
+export YCSB_HOME=/home/ubuntu/ycsb-0.12.0
+
+ycsb load cassandra-cql -s \
    -p hosts="${datatase_private_id}" \
-   -p cassandra.readconsistencylevel=QUOROM \
-   -p cassandra.writeconsistencylevel=QUOROM \
-   -P /home/ubuntu/ycsb-0.12.0/workloads/workloada \
-   -threads 16 
+   -P /home/ubuntu/ycsb-0.12.0/workloads/$desired_workload \
+   -threads 250
+
+ycsb run cassandra-cql -s \
+   -p hosts="${datatase_private_id}" \
+   -P /home/ubuntu/ycsb-0.12.0/workloads/$desired_workload \
+   -threads 250
