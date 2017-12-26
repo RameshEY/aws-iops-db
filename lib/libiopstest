@@ -99,7 +99,7 @@ function libiopstest() {
          terraform init
          terraform get
          terraform plan
-         terraform apply
+         terraform apply -auto-approve
          cd -
          ;;
 
