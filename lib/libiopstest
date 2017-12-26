@@ -49,6 +49,7 @@ function libiopstest() {
           ycsb)
               TF_VAR_ycsb_security_group_name="${TF_VAR_ycsb_security_group_name}-${database}-${testId}"
               TF_VAR_ycsb_instance_name="${TF_VAR_ycsb_instance_name}-${database}-${testId}"
+              TF_VAR_ycsb_desired_workload="${workload}"
               ;;
       esac
    done

@@ -109,7 +109,7 @@ resource "aws_instance" "ycsb" {
   provisioner "remote-exec" {
     inline = [
       "chmod u+x /home/${var.ycsb_username}/ycsb_run_test.sh",
-      "(/home/${var.ycsb_username}/ycsb_run_test.sh ${aws_instance.database.private_ip}) 2>&1 | tee /home/${var.ycsb_username}/ycsb_run_test.log"
+      "(/home/${var.ycsb_username}/ycsb_run_test.sh ${aws_instance.database.private_ip} ${var.ycsb_desired_workload}) 2>&1 | tee /home/${var.ycsb_username}/ycsb_run_test.log"
     ]
   }
 

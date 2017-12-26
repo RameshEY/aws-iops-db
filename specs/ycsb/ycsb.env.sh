@@ -10,3 +10,4 @@ export TF_VAR_ycsb_key_path=${iopstest_key_path}
 export TF_VAR_ycsb_instance_name="${iopstest_owner}-iopstest-ycsb"
 export TF_VAR_ycsb_security_group_name="${iopstest_owner}-iopstest-ycsb"
 
+export TF_VAR_ycsb_desired_workload=""
