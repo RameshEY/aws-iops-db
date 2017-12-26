@@ -59,6 +59,40 @@ resource "aws_instance" "ycsb" {
   }
 
   #
+  # provision ycsb workloads
+  #
+
+  provisioner "file" {
+    source = "ReadIntensiveLoad"
+    destination = "/home/${var.ycsb_username}/ycsb-0.12.0/workloads/ReadIntensiveLoad"
+    connection {
+      type = "ssh"
+      user = "${var.ycsb_username}"
+      private_key = "${file("${var.ycsb_key_path}")}"
+    }
+  }
+
+  provisioner "file" {
+    source = "ReadWriteMixedLoad"
+    destination = "/home/${var.ycsb_username}/ycsb-0.12.0/workloads/ReadWriteMixedLoad"
+    connection {
+      type = "ssh"
+      user = "${var.ycsb_username}"
+      private_key = "${file("${var.ycsb_key_path}")}"
+    }
+  }
+
+  provisioner "file" {
+    source = "WriteIntensiveLoad"
+    destination = "/home/${var.ycsb_username}/ycsb-0.12.0/workloads/WriteIntensiveLoad"
+    connection {
+      type = "ssh"
+      user = "${var.ycsb_username}"
+      private_key = "${file("${var.ycsb_key_path}")}"
+    }
+  }
+
+  #
   # provision and run ycsb_run_test.sh (provided by database)
   #
 
