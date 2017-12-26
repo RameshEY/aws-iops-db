@@ -2,7 +2,7 @@
 #
 #   Read/update ratio: 20/80
 
-recordcount=1000000
+recordcount=6000000
 operationcount=1000000
 workload=com.yahoo.ycsb.workloads.CoreWorkload
 
