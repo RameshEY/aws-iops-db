@@ -10,3 +10,4 @@ variable "ycsb_instance_name" { }
 variable "ycsb_aws_amis" { type = "map" }
 variable "ycsb_security_group_name" { }
 variable "ycsb_vpc_id" { } 
+variable "ycsb_desired_workload" { }
