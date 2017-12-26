@@ -86,6 +86,12 @@ function libiopstest() {
             if [ -f specs/$wkdir/$wkdir.auto.tfvars ]; then
                cat specs/$wkdir/$wkdir.auto.tfvars | tee -a $workspace/terraform.tfvars
             fi
+
+            if [[ "$wkdir" == "ycsb" ]]; then
+               if [[ -d specs/ycsb/workloads ]]; then
+                  cp -R specs/ycsb/workloads/* $workspace/
+               fi
+            fi
          done
 
          cd $workspace/
