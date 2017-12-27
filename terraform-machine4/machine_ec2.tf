@@ -46,18 +46,4 @@ resource "aws_instance" "database" {
     private_key = "${var.common_key_path}"
   }
 
-  provisioner "remote-exec" {
-    inline = [
-      "sudo mkfs -t xfs /dev/nvme0n1",
-      "sudo mkfs -t xfs /dev/nvme1n1",
-      "lsblk -f"
-    ]
-    connection {
-      type = "ssh"
-      host = "${aws_instance.database.public_ip}"
-      user = "${var.common_username}"
-      private_key = "${file("${var.common_key_path}")}"
-    }
-  }
-
 }
