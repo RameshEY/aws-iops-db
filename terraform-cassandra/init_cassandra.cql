@@ -1,4 +1,4 @@
-create keyspace ycsb WITH REPLICATION = {'class' : 'SimpleStrategy', 'replication_factor': 3 };
+create keyspace ycsb WITH REPLICATION = {'class' : 'SimpleStrategy', 'replication_factor': 1 };
 use ycsb;
 create table usertable (
     y_id varchar primary key,
