@@ -24,7 +24,7 @@ resource "null_resource" "mongodb" {
    */
 
   provisioner "file" {
-    source = "${template_dir.database_config.destination_dir}/mgdb_system.sh"
+    source = "mgdb_system.sh"
     destination = "/tmp/provisioning/mgdb_system.sh"
     connection {
       type = "ssh"

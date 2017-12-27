@@ -13,14 +13,16 @@ function libiopstest() {
    local workspace_root="${IOPSTEST_ROOT}/.workspace"
    local workspace="${workspace_root}/${database}/${testId}"
 
+   local wkdir
+   local ASSEMBLY="common machine $machine $database ycsb"
+
+   cd $IOPSTEST_ROOT
+
    #
    # load the environment for any action
    #
 
-   cd $IOPSTEST_ROOT
-
-   local wkdir
-   for wkdir in common machine $database ycsb; do
+   for wkdir in $ASSEMBLY; do
       case $wkdir in
           machine)
               # load TF_ variables associated with the machine parameter
@@ -35,16 +37,25 @@ function libiopstest() {
               fi
               ;;
       esac
+   done
+
+   #
+   # set runtime TF_ variable names
+   #
+
+   for wkdir in $ASSEMBLY; do
       case $wkdir in
           cassandra)
               TF_VAR_csdb_instance_name="${TF_VAR_csdb_instance_name}-${testId}"
               TF_VAR_csdb_security_group_name="${TF_VAR_csdb_security_group_name}-${testId}"
               export TF_VAR_machine_instance_name=$TF_VAR_csdb_instance_name
+              export TF_VAR_machine_security_group_name=$TF_VAR_csdb_security_group_name
               ;;
           mongodb)
               TF_VAR_mgdb_instance_name="${TF_VAR_mgdb_instance_name}-${testId}"
               TF_VAR_mgdb_security_group_name="${TF_VAR_mgdb_security_group_name}-${testId}"
               export TF_VAR_machine_instance_name=$TF_VAR_mgdb_instance_name
+              export TF_VAR_machine_security_group_name=$TF_VAR_mgdb_security_group_name
               ;;
           ycsb)
               TF_VAR_ycsb_security_group_name="${TF_VAR_ycsb_security_group_name}-${database}-${testId}"
@@ -68,7 +79,7 @@ function libiopstest() {
 
          mkdir -p $workspace/
 
-         for wkdir in common machine $database ycsb; do
+         for wkdir in $ASSEMBLY; do
 
             source="terraform-${wkdir}"
             if [[ "$wkdir" == "ycsb" ]]; then

@@ -1,32 +1,3 @@
-resource "aws_security_group" "database" {
-
-  depends_on = [ "data.aws_subnet.selected" ]
-
-  name        = "${var.csdb_security_group_name}"
-  description = "${var.csdb_security_group_name}"
-  vpc_id      = "${var.csdb_vpc_id}"
-
-  # SSH
-  ingress {
-    from_port = 22
-    to_port = 22
-    protocol = "tcp"
-    cidr_blocks = [
-      "0.0.0.0/0"
-    ]
-  }
-
-  egress {
-    from_port = 0
-    to_port = 0
-    protocol = "-1"
-    cidr_blocks = [
-      "0.0.0.0/0"
-    ]
-  }
-
-}
-
 // Allow any internal network flow.
 resource "aws_security_group_rule" "database_ingress_any_any_self" {
   security_group_id = "${aws_security_group.database.id}"
