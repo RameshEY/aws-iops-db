@@ -7,23 +7,34 @@
 
 set -x
 
+#
+# mount /opt
+#
+
 mkdir -p /opt
 
 device_name=xvdh
 if [[ -b /dev/nvme0n1 ]]; then
 
+   #
+   # setup a raid0 for nvme devices
+   #
+   #    http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/raid-config.html#linux-raid
+   #
    device_name=nvme0n1
-
-# 12/27/17 mkfs on /dev/md0 takes way too long to finish
-#  if [[ ! -b /dev/md0 ]]; then
-#     DEBIAN_FRONTEND=noninteractive apt-get install -y mdadm
-#     mdadm --create --verbose /dev/md0 --level=0 --name=opt --raid-devices=2 /dev/nvme0n1 /dev/nvme1n1
-#     #mkfs -t xfs /dev/md0
-#     mount /dev/md0 /opt
-#     echo '/dev/md0 /opt xfs defaults 0 0' | sudo tee -a /etc/fstab
-#     device_name=md0
-#  fi
-
+   if [[ ! -b /dev/md0 ]]; then
+      DEBIAN_FRONTEND=noninteractive apt-get install -y mdadm
+      mdadm --create --verbose /dev/md0 --level=0 --name=opt --raid-devices=2 /dev/nvme0n1 /dev/nvme1n1
+      sleep 2                            # allow time for the RAID array to initialize and synchronize.
+      cat /proc/mdstat
+      mdadm --detail /dev/md0
+      time mkfs.xfs -K -L opt /dev/md0   # use -K to avoid the wait time, mkfs.xfs has to process 3538.78 of 3799.73 GB NVMe
+      mdadm --detail --scan | sudo tee -a /etc/mdadm.conf
+      #sudo dracut -H -f /boot/initramfs-$(uname -r).img $(uname -r) # deferring for now dracut is not available for xenial via apt-get
+      mount /dev/md0 /opt
+      echo "/dev/md0 /opt xfs defaults 0 0" | tee -a /etc/fstab
+      device_name=md0
+   fi
 fi
 
 mount /dev/${device_name} /opt
