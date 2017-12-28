@@ -3,14 +3,13 @@ resource "null_resource" "cassandra" {
   depends_on = [ "aws_instance.database" ]
 
   /**
-   * setup data mount
+   * installation and provisioning database
    */
-  
+
   provisioner "remote-exec" {
     inline = [
-      "sudo mkdir -p /var/lib/cassandra/data",
-      "sudo mount /dev/xvdh /var/lib/cassandra/data",
-      "echo '/dev/xvdh /var/lib/cassandra xfs defaults 0 0' | sudo tee -a /etc/fstab"
+      "sudo mkdir -p /tmp/provisioning",
+      "sudo chown -R ${var.csdb_user_name}:${var.csdb_user_name} /tmp/provisioning/"
     ]
     connection {
       type = "ssh"
@@ -21,13 +20,24 @@ resource "null_resource" "cassandra" {
   }
 
   /**
-   * installation and provisioning database
+   * setup system (filesystem, etc)
    */
+
+  provisioner "file" {
+    source = "csdb_system.sh"
+    destination = "/tmp/provisioning/csdb_system.sh"
+    connection {
+      type = "ssh"
+      host = "${aws_instance.database.public_ip}"
+      user = "${var.csdb_user_name}"
+      private_key = "${file("${var.csdb_key_path}")}"
+    }
+  }
 
   provisioner "remote-exec" {
     inline = [
-      "sudo mkdir -p /tmp/provisioning",
-      "sudo chown -R ${var.csdb_user_name}:${var.csdb_user_name} /tmp/provisioning/"
+      "sudo chmod ugo+x /tmp/provisioning/csdb_system.sh",
+      "sudo /tmp/provisioning/csdb_system.sh",
     ]
     connection {
       type = "ssh"

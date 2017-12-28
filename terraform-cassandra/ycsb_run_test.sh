@@ -60,4 +60,3 @@ ycsb run cassandra-cql  -s \
    -p hosts="${database_private_id}" \
    -P /home/ubuntu/ycsb-0.12.0/workloads/$desired_workload \
    -threads 250
-
