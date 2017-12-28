@@ -14,9 +14,17 @@ function libiopstest() {
    local workspace="${workspace_root}/${database}/${testId}"
 
    local wkdir
+   cd $IOPSTEST_ROOT
+
+   #
+   # configure assembly components
+   #
+
    local ASSEMBLY="common machine $machine $database ycsb"
 
-   cd $IOPSTEST_ROOT
+#   if [[ ! -z $ioptest_datadog_api_key ]]; then
+#      ASSEMBLY="common machine $machine $datadog $database ycsb"
+#   fi
 
    #
    # load the environment for any action

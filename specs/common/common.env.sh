@@ -8,3 +8,4 @@ export TF_VAR_common_subnet_id=${iopstest_subnet_id}
 export TF_VAR_common_key_name=${iopstest_key_name}
 export TF_VAR_common_key_path=${iopstest_key_path}
 
+export TF_VAR_datadog_api_key=${ioptest_datadog_api_key}
