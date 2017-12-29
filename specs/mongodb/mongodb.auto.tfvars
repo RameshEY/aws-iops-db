@@ -1,4 +1,4 @@
-mongodb_basedir = "/opt/mongodb"
+mongodb_basedir = "/data/mongodb"
 mongodb_conf_logpath = "/var/log/mongodb/mongod.log"
 mongodb_conf_engine = "/etc/mongod.conf"
 mongodb_username = "ubuntu"

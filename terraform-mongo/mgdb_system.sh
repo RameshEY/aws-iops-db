@@ -8,10 +8,10 @@
 set -x
 
 #
-# mount /opt
+# mount /data
 #
 
-mkdir -p /opt
+mkdir -p /data
 
 device_name=xvdh
 if [[ -b /dev/nvme0n1 ]]; then
@@ -31,14 +31,14 @@ if [[ -b /dev/nvme0n1 ]]; then
       time mkfs.xfs -K -L opt /dev/md0   # use -K to avoid the wait time, mkfs.xfs has to process 3538.78 of 3799.73 GB NVMe
       mdadm --detail --scan | sudo tee -a /etc/mdadm.conf
       #sudo dracut -H -f /boot/initramfs-$(uname -r).img $(uname -r) # deferring for now dracut is not available for xenial via apt-get
-      mount /dev/md0 /opt
-      echo "/dev/md0 /opt xfs defaults 0 0" | tee -a /etc/fstab
+      mount /dev/md0 /data
+      echo "/dev/md0 /data xfs defaults 0 0" | tee -a /etc/fstab
       device_name=md0
    fi
 fi
 
-mount /dev/${device_name} /opt
-echo "/dev/${device_name} /opt xfs defaults 0 0" | sudo tee -a /etc/fstab
+mount /dev/${device_name} /data
+echo "/dev/${device_name} /data xfs defaults 0 0" | sudo tee -a /etc/fstab
 
 #
 # tuning for mongo

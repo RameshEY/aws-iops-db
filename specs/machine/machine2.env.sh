@@ -1,4 +1,4 @@
-export TF_VAR_machine_instance_name="ioptest (machine2) (r4.4xlarge 10K io1)"
+export TF_VAR_machine_instance_name="iopstest (machine2) (r4.4xlarge 10K io1)"
 export TF_VAR_machine_instance_type="r4.4xlarge"
 export TF_VAR_machine_security_group_name=$TF_VAR_machine_instance_name
 
