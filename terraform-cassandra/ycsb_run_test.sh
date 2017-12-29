@@ -54,9 +54,14 @@ export YCSB_HOME=/home/ubuntu/ycsb-0.12.0
 ycsb load cassandra-cql  -s \
    -p hosts="${database_private_id}" \
    -P /home/ubuntu/ycsb-0.12.0/workloads/$desired_workload \
-   -threads 250
+   -threads 250 2>&1 | tee ~/ycsb_cassandra_load_test_250.log
 
 ycsb run cassandra-cql  -s \
    -p hosts="${database_private_id}" \
    -P /home/ubuntu/ycsb-0.12.0/workloads/$desired_workload \
-   -threads 250
+   -threads 100 2>&1 | tee ~/ycsb_cassandra_run_test_100.log
+
+ycsb run cassandra-cql  -s \
+   -p hosts="${database_private_id}" \
+   -P /home/ubuntu/ycsb-0.12.0/workloads/$desired_workload \
+   -threads 250 2>&1 | tee ~/ycsb_cassandra_run_test_250.log

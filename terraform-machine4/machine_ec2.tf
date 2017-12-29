@@ -46,4 +46,77 @@ resource "aws_instance" "database" {
     private_key = "${var.common_key_path}"
   }
 
+  /**
+   * create /tmp/provisioning
+   */
+
+  provisioner "remote-exec" {
+    inline = [
+      "sudo mkdir -p /tmp/provisioning",
+      "sudo chown -R ${var.common_username}:${var.common_username} /tmp/provisioning/"
+    ]
+    connection {
+      type = "ssh"
+      host = "${aws_instance.database.public_ip}"
+      user = "${var.common_username}"
+      private_key = "${file("${var.common_key_path}")}"
+    }
+  }
+
+  /**
+   * datadog client
+   */
+
+  provisioner "file" {
+    source = "datadog_install.sh"
+    destination = "/tmp/provisioning/datadog_install.sh"
+    connection {
+      type = "ssh"
+      host = "${aws_instance.database.public_ip}"
+      user = "${var.common_username}"
+      private_key = "${file("${var.common_key_path}")}"
+    }
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "sudo chmod ugo+x /tmp/provisioning/datadog_install.sh",
+      "sudo /tmp/provisioning/datadog_install.sh ${var.datadog_api_key}",
+    ]
+    connection {
+      type = "ssh"
+      host = "${aws_instance.database.public_ip}"
+      user = "${var.common_username}"
+      private_key = "${file("${var.common_key_path}")}"
+    }
+  }
+
+  /**
+   * cgroup client
+   */
+
+  provisioner "file" {
+    source = "cgroup_install.sh"
+    destination = "/tmp/provisioning/cgroup_install.sh"
+    connection {
+      type = "ssh"
+      host = "${aws_instance.database.public_ip}"
+      user = "${var.common_username}"
+      private_key = "${file("${var.common_key_path}")}"
+    }
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "sudo chmod ugo+x /tmp/provisioning/cgroup_install.sh",
+      "sudo /tmp/provisioning/cgroup_install.sh"
+    ]
+    connection {
+      type = "ssh"
+      host = "${aws_instance.database.public_ip}"
+      user = "${var.common_username}"
+      private_key = "${file("${var.common_key_path}")}"
+    }
+  }
+
 }

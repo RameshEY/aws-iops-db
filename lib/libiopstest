@@ -14,9 +14,13 @@ function libiopstest() {
    local workspace="${workspace_root}/${database}/${testId}"
 
    local wkdir
-   local ASSEMBLY="common machine $machine $database ycsb"
-
    cd $IOPSTEST_ROOT
+
+   #
+   # configure assembly components
+   #
+
+   local ASSEMBLY="common machine $machine $database ycsb"
 
    #
    # load the environment for any action

@@ -16,7 +16,7 @@ DEVICE_NAME=xvdh
 
 #now provided by terraform
 #mongodb_version="3.6.0"
-#mongodb_basedir="/opt/mongodb"
+#mongodb_basedir="/data/mongodb"
 #mongodb_conf_engine="/etc/mongod.conf"
 #mongodb_conf_logpath="/var/log/mongodb/mongod.log"
 
@@ -136,3 +136,9 @@ sudo systemctl start mongodb
 sudo systemctl status mongodb
 
 #numactl --interleave=all mongod
+
+#
+# apply resource limits
+#
+
+cgclassify -g memory:DBLimitedGroup `pidof mongod`
