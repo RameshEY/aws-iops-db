@@ -45,5 +45,11 @@ ycsb load mongodb -s \
 ycsb run mongodb -s \
    -p mongodb.url="mongodb://${datatase_private_id}:27017/ycsb" \
    -P /home/ubuntu/ycsb-0.12.0/workloads/$desired_workload \
+   -threads 250 \
+   -p mongodb.auth="false" 2>&1 | tee ~/ycsb_load_test_250.log
+
+ycsb run mongodb -s \
+   -p mongodb.url="mongodb://${datatase_private_id}:27017/ycsb" \
+   -P /home/ubuntu/ycsb-0.12.0/workloads/$desired_workload \
    -threads 100 \
    -p mongodb.auth="false" 2>&1 | tee ~/ycsb_load_test_100.log
