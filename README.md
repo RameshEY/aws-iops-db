@@ -21,6 +21,8 @@ $ export iopstest_subnet_id="subnet-456ghjk"
 $ export iopstest_aws_region="us-east-1"
 $ export iopstest_key_name="mykeyname
 $ export iopstest_key_path="/path/to/mykeyname.pem"
+
+$ export ioptest_datadog_api_key="..."  # optional
 ```
 
 Run a test
