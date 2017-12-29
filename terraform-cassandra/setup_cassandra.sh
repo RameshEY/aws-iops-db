@@ -31,3 +31,9 @@ private_ip=$(hostname -I)
 nodetool -h ${private_ip} status
 cat /tmp/provisioning/init_cassandra.cql | cqlsh ${private_ip}
 cqlsh ${private_ip} -e "describe keyspace ycsb"
+
+#
+# apply resource limits
+#
+
+cgclassify -g memory:DBLimitedGroup `pidof java`
