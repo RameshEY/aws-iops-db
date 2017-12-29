@@ -37,16 +37,26 @@ bash iopstest $*
 EOF
 ```
 
-Run a test
+Basic syntax
 
 ```
-$ bash iopstest-site provision database test1
+$ bash iopstest-site provision database test1 test2 ... testN
+$ bash iopstest-site destroy database test1 test2 ... testN
 ```
 
-Destroy a test
+For Cassandra database
 
 ```
-$ bash iopstest-site destroy database test1
+$ bash iopstest-site provision cassandra test1, test2 ... testN
+$ bash iopstest-site destroy cassandra test1, test2 ... testN
+
+```
+
+For MongoDB database
+
+```
+$ bash iopstest-site provision mongodb test1 test2 ...  testN
+$ bash iopstest-site destroy mongodb test1 test2 ... testN
 ```
 
 ## Notes
