@@ -27,7 +27,7 @@ function check_readiness {
          echo "[$(date -u)] $is_connected"
          echo "[$(date -u)] Waiting 1 second..."
          sleep 1
-      fi  
+      fi
    done
 }
 
@@ -40,10 +40,10 @@ ycsb load mongodb -s \
    -p mongodb.url="mongodb://${datatase_private_id}:27017/ycsb" \
    -P /home/ubuntu/ycsb-0.12.0/workloads/$desired_workload \
    -threads 250 \
-   -p mongodb.auth="false" 
+   -p mongodb.auth="false" 2>&1 | tee ~/ycsb_mongo_load_test_250.log
 
 ycsb run mongodb -s \
    -p mongodb.url="mongodb://${datatase_private_id}:27017/ycsb" \
    -P /home/ubuntu/ycsb-0.12.0/workloads/$desired_workload \
-   -threads 250 \
-   -p mongodb.auth="false"
+   -threads 100 \
+   -p mongodb.auth="false" 2>&1 | tee ~/ycsb_cassandra_load_test_100.log
