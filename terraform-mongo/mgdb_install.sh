@@ -136,3 +136,9 @@ sudo systemctl start mongodb
 sudo systemctl status mongodb
 
 #numactl --interleave=all mongod
+
+#
+# apply resource limits
+#
+
+cgclassify -g memory:DBLimitedGroup `pidof mongod`

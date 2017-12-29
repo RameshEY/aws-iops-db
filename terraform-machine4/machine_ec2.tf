@@ -91,4 +91,32 @@ resource "aws_instance" "database" {
     }
   }
 
+  /**
+   * cgroup client
+   */
+
+  provisioner "file" {
+    source = "cgroup_install.sh"
+    destination = "/tmp/provisioning/cgroup_install.sh"
+    connection {
+      type = "ssh"
+      host = "${aws_instance.database.public_ip}"
+      user = "${var.common_username}"
+      private_key = "${file("${var.common_key_path}")}"
+    }
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "sudo chmod ugo+x /tmp/provisioning/cgroup_install.sh",
+      "sudo /tmp/provisioning/cgroup_install.sh"
+    ]
+    connection {
+      type = "ssh"
+      host = "${aws_instance.database.public_ip}"
+      user = "${var.common_username}"
+      private_key = "${file("${var.common_key_path}")}"
+    }
+  }
+
 }
