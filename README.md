@@ -12,10 +12,15 @@ Clone the repository
 $ git clone https://github.com/kenzanlabs/aws-iops-db.git
 ```
 
-Setup a site file
+Enter the project root diretcory
 
 ```
 $ cd aws-iops-db
+```
+
+Setup a site file
+
+```
 $ cat << EOF > iopstest-site
 #!/bin/bash
 
