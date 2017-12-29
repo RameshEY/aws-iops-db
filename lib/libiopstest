@@ -22,10 +22,6 @@ function libiopstest() {
 
    local ASSEMBLY="common machine $machine $database ycsb"
 
-#   if [[ ! -z $ioptest_datadog_api_key ]]; then
-#      ASSEMBLY="common machine $machine $datadog $database ycsb"
-#   fi
-
    #
    # load the environment for any action
    #
