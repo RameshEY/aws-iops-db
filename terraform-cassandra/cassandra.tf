@@ -92,8 +92,8 @@ resource "null_resource" "cassandra" {
   }
 
   provisioner "file" {
-    source = "cassandra-env.sh"
-    destination = "/tmp/provisioning/cassandra-env.sh"
+    source = "jvm.options"
+    destination = "/tmp/provisioning/jvm.options"
     connection {
       type = "ssh"
       host = "${aws_instance.database.public_ip}"
