@@ -1,0 +1,455 @@
+#!/bin/bash
+
+#
+# file: iopstest-report file1 file2 ... fileN
+# description: generates a report of benchmark data from iopstest terraform logs
+#
+
+set -e
+
+function gen_csv_row {
+
+   #
+   # usage: gen_csv_row ReadIntensiveLoad.csv "$YCSB_250_FIELD_MAP"
+   #
+
+   local csv_filename="$1"
+   local csv_field_map="$2"
+
+   local csv_header=""
+   local csv_row=""
+   local csv_sep=""
+   local csv_firstime="$1"
+
+   for map in $csv_field_map; do
+
+       title=$(echo "$map" | cut -d\| -f 1 | sed -e 's/+/ /g')
+
+       variable_value=""
+       variable_name=$(echo "$map" | cut -d\| -f 2)
+       if [[ ! -z $variable_name ]]; then
+          variable_value=$(eval $(echo "echo \$$variable_name")) # double interpolation
+       fi
+
+       col_header=$(printf '"%s"' "$title")
+       col_value=$(printf  '"%s"' "$variable_value")
+
+       csv_header=$(printf "%s%s%s" "$csv_header" "$csv_sep" "$col_header")
+       csv_row=$(printf "%s%s%s" "$csv_row" "$csv_sep" "$col_value")
+       csv_sep=","
+
+   done
+
+   if [[ ! -f $csv_filename ]]; then
+      echo "$csv_header" > $csv_filename
+   fi
+
+   echo "$csv_row" >> $csv_filename
+}
+
+#
+# Begin
+#
+
+csv_firsttime=1
+
+FILES="$*"
+
+for f in $FILES; do
+
+  if [[ ! -f $f ]]; then
+     echo "error: skipping $f, file not found"
+     continue
+  fi
+
+  terraform_log=$(cat "$f");
+
+  #
+  # skip error'd logs
+  #
+
+  is_errored=$(echo "$terraform_log" | grep "Error launching source instance" | cut -d: -f2- )
+
+  if [[ "$is_errored" != "" ]]; then
+     echo "debug: skipping $f, found instance launch error" # '$is_errored'
+     continue
+  fi;
+
+  #
+  # options
+  #
+
+  iopstest_options=$(echo "$terraform_log" | grep '+ options' | cut -d=  -f 2- | sed -e "s/'//g" )
+
+  if [[ -z $iopstest_options ]]; then
+     echo "error: no options found for ($database, $testID)"
+     exit;
+  fi
+
+  option_database=$(echo "$iopstest_options" | awk '{ printf("%s", $1) }')
+  option_test_id=$(echo "$iopstest_options" | awk '{ printf("%s", $2) }')
+  option_machine_config=$(echo "$iopstest_options" | awk '{ printf("%s", $3) }')
+  option_workload=$(echo "$iopstest_options" | awk '{ printf("%s", $4) }')
+
+  case $option_workload in
+    WriteIntensiveLoad)
+      option_workload_description='20% Read / 80% Write'
+      ;;
+    ReadIntensiveLoad)
+      option_workload_description='80% Read / 20% Write'
+      ;;
+    ReadWriteMixedLoad)
+      option_workload_description='50% Read / 50% Write'
+      ;;
+    *)
+      echo "error: unhandled option_workload"
+      exit 1
+      ;;
+  esac
+
+  #
+  # debug
+  #
+
+  #[[ "$option_workload" != "ReadIntensiveLoad" ]]  && continue;
+  #[[ "$option_workload" != "ReadWriteMixedLoad" ]] && continue;
+  #[[ "$option_workload" != "WriteIntensiveLoad" ]] && continue;
+
+  #
+  # report
+  #
+
+  csv_report_name="iopstest_report_${option_workload}.csv"
+
+echo "debug: $f | $iopstest_options into $csv_report_name"
+
+  #
+  # test
+  #
+
+  test_id=$option_test_id
+  test_name=$(echo "$terraform_log" | grep '++ TF_VAR_machine_instance_name' | cut -d\  -f4- | sed -e "s/\'//" -e 's/(//' -e 's/)//' )
+  test_database=$option_database
+  test_workload=$option_workload
+
+  #
+  # database
+  #
+
+  database_instance_ip=$(echo "$terraform_log" | grep 'aws_instance.database (remote-exec):   Host:' | uniq | awk '{ printf("%s", $4) }')
+  database_instance_type=$(echo "$terraform_log" | grep '++ TF_VAR_machine_instance_type' | cut -d= -f2)
+
+  database_ebs_iops=$(echo "$terraform_log" | grep '++ TF_VAR_machine_ebs_iops' | cut -d= -f 2)
+  database_ebs_type=$(echo "$terraform_log" | grep '++ TF_VAR_machine_ebs_type' | cut -d= -f 2)
+  database_ebs_volume_size=$(echo "$terraform_log" | grep '++ TF_VAR_machine_ebs_volume_size' | cut -d= -f 2)
+
+  if [[ $database_instance_type == 'r3.4xlarge' ]]; then
+     test_name="${test_name} ${database_ebs_volume_size}GB ${database_ebs_type}"
+  fi
+
+  #
+  # ycsb instance
+  #
+
+  ycsb_instance_ip=$(echo "$terraform_log" | grep 'aws_instance.ycsb (remote-exec):   Host:' | uniq | cut -d: -f3 | sed -e 's/ //')
+  ycsb_instance_id=$(echo "$terraform_log" | grep 'aws_instance.ycsb: Creation complete' | cut -d: -f3 | cut -d\) -f1 | awk '{ printf("%s\n",$1) }')
+
+  ycsb_key_path=$(echo "$terraform_log" | grep '++ TF_VAR_ycsb_key_path=' | cut -d\= -f2 | uniq)
+
+  ycsb_overall_log_file="$(dirname $f)/ycsb_${option_database}_${option_test_id}_run_test_overall.log"
+
+  #
+  # ycsb load
+  #
+
+  ycsb_load_command=$(echo "$terraform_log" | grep 'ycsb load' | cut -d\  -f3- | cut -d\  -f 2- )
+
+  if [[ -z $ycsb_load_command ]]; then
+     continue
+  fi
+
+  ycsb_load_threads=$(echo "$ycsb_load_command" | awk '{ printf("%s", $10) }')
+
+  ycsb_load_log_file="$(dirname $f)/ycsb_${option_database}_${option_test_id}_load_${ycsb_load_threads}_${ycsb_instance_ip}.log"
+
+  if [[ -f $ycsb_load_log_file ]]; then
+     ycsb_load_results=$(grep -A 24 "\[OVERALL\], RunTime(ms)" $ycsb_load_log_file)
+  fi
+
+  if [[ -z $ycsb_load_results ]]; then
+     ycsb_load_results=$(grep -A 24 "\[OVERALL\], RunTime(ms)" $ycsb_overall_log_file | head -24) 
+  fi
+
+  if [[ -z ycsb_load_results ]]; then
+     echo "error: found ycsb load results"
+     exit 1
+  fi
+
+  ycsb_load_runtime_milliseconds=$(echo "$ycsb_load_results" | grep "\[OVERALL\], RunTime(ms)" | awk '{ printf("%s",$3) }')
+  ycsb_load_throughput_ops_per_second=$(echo "$ycsb_load_results" | grep "\[OVERALL\], Throughput(ops/sec)" | awk '{ printf("%s",$3) }')
+
+  ycsb_load_cleanup_operations=$(echo "$ycsb_load_results" | grep '\[CLEANUP\], Operations' | awk '{ printf("%s",$3) }')
+  ycsb_load_cleanup_avg_latency=$(echo "$ycsb_load_results" | grep '\[CLEANUP\], AverageLatency' | awk '{ printf("%s",$3) }')
+  ycsb_load_cleanup_min_latency=$(echo "$ycsb_load_results" | grep '\[CLEANUP\], MinLatency' | awk '{ printf("%s",$3) }')
+  ycsb_load_cleanup_max_latency=$(echo "$ycsb_load_results" | grep '\[CLEANUP\], MaxLatency' | awk '{ printf("%s",$3) }')
+  ycsb_load_cleanup_95_percentile_latency=$(echo "$ycsb_load_results" | grep '\[CLEANUP\], 95thPercentileLatency' | awk '{ printf("%s",$3) }')
+  ycsb_load_cleanup_99_percentile_latency=$(echo "$ycsb_load_results" | grep '\[CLEANUP\], 99thPercentileLatency' | awk '{ printf("%s",$3) }')
+
+  ycsb_load_insert_operations=$(echo "$ycsb_load_results" | grep '\[INSERT\], Operations' | awk '{ printf("%s",$3) }')
+  ycsb_load_insert_avg_latency=$(echo "$ycsb_load_results" | grep '\[INSERT\], AverageLatency' | awk '{ printf("%s",$3) }')
+  ycsb_load_insert_min_latency=$(echo "$ycsb_load_results" | grep '\[INSERT\], MinLatency' | awk '{ printf("%s",$3) }')
+  ycsb_load_insert_max_latency=$(echo "$ycsb_load_results" | grep '\[INSERT\], MaxLatency' | awk '{ printf("%s",$3) }')
+  ycsb_load_insert_95_percentile_latency=$(echo "$ycsb_load_results" | grep '\[INSERT\], 95thPercentileLatency' | awk '{ printf("%s",$3) }')
+  ycsb_load_insert_99_percentile_latency=$(echo "$ycsb_load_results" | grep '\[INSERT\], 99thPercentileLatency' | awk '{ printf("%s",$3) }')
+
+  #
+  # ycsb run 100
+  #
+
+  ycsb_run100_command=$(echo "$terraform_log" | grep 'ycsb run' | grep 'threads 100' | cut -d\  -f3- | cut -d\  -f 2- )
+  ycsb_run100_threads=$(echo "$ycsb_run100_command" | awk '{ printf("%s", $10) }')
+
+  ycsb_run100_log_file="$(dirname $f)/ycsb_${option_database}_${option_test_id}_run_${ycsb_run100_threads}_${ycsb_instance_ip}.log"
+
+  if [[ -f $ycsb_run100_log_file ]]; then
+     ycsb_run100_results=$(grep -A 50 "\[OVERALL\], RunTime(ms)" $ycsb_run100_log_file)
+  fi  
+
+  if [[ -z $ycsb_run100_results ]]; then
+     ycsb_run100_results=$(cat $ycsb_overall_log_file | grep -A 1000 'ycsb run.*threads 100' | grep -A 50 "\[OVERALL\], RunTime(ms)" | head -31)
+  fi  
+
+  if [[ -z ycsb_run100_results ]]; then
+     echo "error: found ycsb run ycsb_run100_threads results"
+     exit 1
+  fi  
+
+  ycsb_run100_runtime_milliseconds=$(echo "$ycsb_run100_results" | grep "\[OVERALL\], RunTime(ms)" | awk '{ printf("%s",$3) }') 
+  ycsb_run100_throughput_ops_per_second=$(echo "$ycsb_run100_results" | grep "\[OVERALL\], Throughput(ops/sec)" | awk '{ printf("%s",$3) }') 
+
+  ycsb_run100_cleanup_operations=$(echo "$ycsb_run100_results" | grep '\[CLEANUP\], Operations' | awk '{ printf("%s",$3) }') 
+  ycsb_run100_cleanup_avg_latency=$(echo "$ycsb_run100_results" | grep '\[CLEANUP\], AverageLatency' | awk '{ printf("%s",$3) }') 
+  ycsb_run100_cleanup_min_latency=$(echo "$ycsb_run100_results" | grep '\[CLEANUP\], MinLatency' | awk '{ printf("%s",$3) }') 
+  ycsb_run100_cleanup_max_latency=$(echo "$ycsb_run100_results" | grep '\[CLEANUP\], MaxLatency' | awk '{ printf("%s",$3) }') 
+  ycsb_run100_cleanup_95_percentile_latency=$(echo "$ycsb_run100_results" | grep '\[CLEANUP\], 95thPercentileLatency' | awk '{ printf("%s",$3) }') 
+  ycsb_run100_cleanup_99_percentile_latency=$(echo "$ycsb_run100_results" | grep '\[CLEANUP\], 99thPercentileLatency' | awk '{ printf("%s",$3) }') 
+
+  ycsb_run100_read_operations=$(echo "$ycsb_run100_results" | grep '\[READ\], Operations' | awk '{ printf("%s",$3) }') 
+  ycsb_run100_read_avg_latency=$(echo "$ycsb_run100_results" | grep '\[READ\], AverageLatency' | awk '{ printf("%s",$3) }') 
+  ycsb_run100_read_min_latency=$(echo "$ycsb_run100_results" | grep '\[READ\], MinLatency' | awk '{ printf("%s",$3) }') 
+  ycsb_run100_read_max_latency=$(echo "$ycsb_run100_results" | grep '\[READ\], MaxLatency' | awk '{ printf("%s",$3) }') 
+  ycsb_run100_read_95_percentile_latency=$(echo "$ycsb_run100_results" | grep '\[READ\], 95thPercentileLatency' | awk '{ printf("%s",$3) }') 
+  ycsb_run100_read_99_percentile_latency=$(echo "$ycsb_run100_results" | grep '\[READ\], 99thPercentileLatency' | awk '{ printf("%s",$3) }') 
+
+  ycsb_run100_write_operations=$(echo "$ycsb_run100_results" | grep '\[UPDATE\], Operations' | awk '{ printf("%s",$3) }') 
+  ycsb_run100_write_avg_latency=$(echo "$ycsb_run100_results" | grep '\[UPDATE\], AverageLatency' | awk '{ printf("%s",$3) }') 
+
+  ycsb_run100_write_min_latency=$(echo "$ycsb_run100_results" | grep '\[UPDATE\], MinLatency' | awk '{ printf("%s",$3) }') 
+  ycsb_run100_write_max_latency=$(echo "$ycsb_run100_results" | grep '\[UPDATE\], MaxLatency' | awk '{ printf("%s",$3) }') 
+  ycsb_run100_write_95_percentile_latency=$(echo "$ycsb_run100_results" | grep '\[UPDATE\], 95thPercentileLatency' | awk '{ printf("%s",$3) }') 
+  ycsb_run100_write_99_percentile_latency=$(echo "$ycsb_run100_results" | grep '\[UPDATE\], 99thPercentileLatency' | awk '{ printf("%s",$3) }') 
+
+  case $test_workload in
+
+     ReadWriteMixedLoad)
+
+        FIELD_MAP="
+        Workload|option_workload_description
+        Database|test_database
+        Test+Case|test_id
+        Database+Instance+Type|test_name
+
+        Threads|ycsb_run100_threads
+        Run+Time+(ms)|ycsb_run100_runtime_milliseconds
+
+        YCSB:+Throughput+(ops/sec)|ycsb_run100_throughput_ops_per_second
+
+        YCSB:+Average+Write+Latency|ycsb_run100_read_avg_latency
+
+        YCSB:+Min+Read+Latency|ycsb_run100_read_min_latency
+        YCSB:+Max+Read+Latency|ycsb_run100_read_max_latency
+        YCSB:+95%+Read+Latency|ycsb_run100_read_95_percentile_latency
+        YCSB:+99%+Read+Latency|ycsb_run100_read_99_percentile_latency
+
+        YCSB:+Min+Write+Latency|ycsb_run100_write_min_latency
+        YCSB:+Max+Write+Latency|ycsb_run100_write_max_latency
+        YCSB:+95%+Write+Latency|ycsb_run100_write_95_percentile_latency
+        YCSB:+99%+Write+Latency|ycsb_run100_write_99_percentile_latency"
+
+        gen_csv_row $csv_report_name "$FIELD_MAP"
+        ;;
+  
+     ReadIntensiveLoad)
+  
+        FIELD_MAP="
+        Workload|option_workload_description
+        Database|test_database
+        Test+Case|test_id
+        Database+Instance+Type|test_name
+
+        Threads|ycsb_run100_threads
+        Run+Time+(ms)|ycsb_run100_runtime_milliseconds
+
+        YCSB:+Throughput+(ops/sec)|ycsb_run100_throughput_ops_per_second
+
+        YCSB:+Average+Read+Latency|ycsb_run100_read_avg_latency
+        YCSB:+Min+Read+Latency|ycsb_run100_read_min_latency
+        YCSB:+Max+Read+Latency|ycsb_run100_read_max_latency
+        YCSB:+95%+Read+Latency|ycsb_run100_read_95_percentile_latency
+        YCSB:+99%+Read+Latency|ycsb_run100_read_99_percentile_latency"
+
+        gen_csv_row $csv_report_name "$FIELD_MAP"
+        ;;
+  
+     WriteIntensiveLoad)
+  
+        FIELD_MAP="
+        Workload|option_workload_description
+        Database|test_database
+        Test+Case|test_id
+        Database+Instance+Type|test_name
+
+        Threads|ycsb_run100_threads
+        Run+Time+(ms)|ycsb_run100_runtime_milliseconds
+
+        YCSB:+Throughput+(ops/sec)|ycsb_run100_throughput_ops_per_second
+
+        YCSB:+Average+Write+Latency|ycsb_run100_write_avg_latency
+        YCSB:+Min+Write+Latency|ycsb_run100_write_min_latency
+        YCSB:+Max+Write+Latency|ycsb_run100_write_max_latency
+        YCSB:+95%+Write+Latency|ycsb_run100_write_95_percentile_latency
+        YCSB:+99%+Write+Latency|ycsb_run100_write_99_percentile_latency"
+  
+        gen_csv_row $csv_report_name "$FIELD_MAP"
+        ;;
+     *)
+        ;;
+  esac
+
+  #
+  # ycsb run 250
+  #
+
+  ycsb_run250_command=$(echo "$terraform_log" | grep 'ycsb run' | grep 'threads 250' | cut -d\  -f3- | cut -d\  -f 2- )
+  ycsb_run250_threads=$(echo "$ycsb_run250_command" | awk '{ printf("%s", $10) }')
+
+  ycsb_run250_log_file="$(dirname $f)/ycsb_${option_database}_${option_test_id}_run_${ycsb_run250_threads}_${ycsb_instance_ip}.log"
+
+  if [[ -f $ycsb_run250_log_file ]]; then
+     ycsb_run250_results=$(grep -A 30 "\[OVERALL\], RunTime(ms)" $ycsb_run250_log_file)
+  fi  
+
+  if [[ -z $ycsb_run250_results ]]; then
+     ycsb_run250_results=$(cat $ycsb_overall_log_file | grep -A 1000 'ycsb run.*threads 100' | grep -A 30 "\[OVERALL\], RunTime(ms)" | head -31)
+
+  fi  
+
+  if [[ -z ycsb_run250_results ]]; then
+     echo "error: found ycsb run $ycsb_run250_threads results"
+     exit 1
+  fi  
+
+  ycsb_run250_runtime_milliseconds=$(echo "$ycsb_run250_results" | grep "\[OVERALL\], RunTime(ms)" | awk '{ printf("%s",$3) }') 
+  ycsb_run250_throughput_ops_per_second=$(echo "$ycsb_run250_results" | grep "\[OVERALL\], Throughput(ops/sec)" | awk '{ printf("%s",$3) }') 
+
+  ycsb_run250_cleanup_operations=$(echo "$ycsb_run250_results" | grep '\[CLEANUP\], Operations' | awk '{ printf("%s",$3) }') 
+  ycsb_run250_cleanup_avg_latency=$(echo "$ycsb_run250_results" | grep '\[CLEANUP\], AverageLatency' | awk '{ printf("%s",$3) }') 
+  ycsb_run250_cleanup_min_latency=$(echo "$ycsb_run250_results" | grep '\[CLEANUP\], MinLatency' | awk '{ printf("%s",$3) }') 
+  ycsb_run250_cleanup_max_latency=$(echo "$ycsb_run250_results" | grep '\[CLEANUP\], MaxLatency' | awk '{ printf("%s",$3) }') 
+  ycsb_run250_cleanup_95_percentile_latency=$(echo "$ycsb_run250_results" | grep '\[CLEANUP\], 95thPercentileLatency' | awk '{ printf("%s",$3) }') 
+  ycsb_run250_cleanup_99_percentile_latency=$(echo "$ycsb_run250_results" | grep '\[CLEANUP\], 99thPercentileLatency' | awk '{ printf("%s",$3) }') 
+
+  ycsb_run250_read_operations=$(echo "$ycsb_run250_results" | grep '\[READ\], Operations' | awk '{ printf("%s",$3) }') 
+  ycsb_run250_read_avg_latency=$(echo "$ycsb_run250_results" | grep '\[READ\], AverageLatency' | awk '{ printf("%s",$3) }') 
+  ycsb_run250_read_min_latency=$(echo "$ycsb_run250_results" | grep '\[READ\], MinLatency' | awk '{ printf("%s",$3) }') 
+  ycsb_run250_read_max_latency=$(echo "$ycsb_run250_results" | grep '\[READ\], MaxLatency' | awk '{ printf("%s",$3) }') 
+  ycsb_run250_read_95_percentile_latency=$(echo "$ycsb_run250_results" | grep '\[READ\], 95thPercentileLatency' | awk '{ printf("%s",$3) }') 
+  ycsb_run250_read_99_percentile_latency=$(echo "$ycsb_run250_results" | grep '\[READ\], 99thPercentileLatency' | awk '{ printf("%s",$3) }') 
+
+  ycsb_run250_write_operations=$(echo "$ycsb_run250_results" | grep '\[UPDATE\], Operations' | awk '{ printf("%s",$3) }') 
+  ycsb_run250_write_avg_latency=$(echo "$ycsb_run250_results" | grep '\[UPDATE\], AverageLatency' | awk '{ printf("%s",$3) }') 
+  ycsb_run250_write_min_latency=$(echo "$ycsb_run250_results" | grep '\[UPDATE\], MinLatency' | awk '{ printf("%s",$3) }') 
+  ycsb_run250_write_max_latency=$(echo "$ycsb_run250_results" | grep '\[UPDATE\], MaxLatency' | awk '{ printf("%s",$3) }') 
+  ycsb_run250_write_95_percentile_latency=$(echo "$ycsb_run250_results" | grep '\[UPDATE\], 95thPercentileLatency' | awk '{ printf("%s",$3) }') 
+  ycsb_run250_write_99_percentile_latency=$(echo "$ycsb_run250_results" | grep '\[UPDATE\], 99thPercentileLatency' | awk '{ printf("%s",$3) }') 
+
+  case $test_workload in
+
+     ReadWriteMixedLoad)
+
+        FIELD_MAP="
+        Workload|option_workload_description
+        Database|test_database
+        Test+Case|test_id
+        Database+Instance+Type|test_name
+
+        Threads|ycsb_run250_threads
+        Run+Time+(ms)|ycsb_run250_runtime_milliseconds
+
+        YCSB:+Throughput+(ops/sec)|ycsb_run250_throughput_ops_per_second
+
+        YCSB:+Average+Read+Latency|ycsb_run250_read_avg_latency
+        YCSB:+Min+Read+Latency|ycsb_run250_read_min_latency
+        YCSB:+Max+Read+Latency|ycsb_run250_read_max_latency
+        YCSB:+95%+Read+Latency|ycsb_run250_read_95_percentile_latency
+        YCSB:+99%+Read+Latency|ycsb_run250_read_99_percentile_latency
+
+        YCSB:+Average+Write+Latency|ycsb_run250_write_avg_latency
+        YCSB:+Min+Write+Latency|ycsb_run250_write_min_latency
+        YCSB:+Max+Write+Latency|ycsb_run250_write_max_latency
+        YCSB:+95%+Write+Latency|ycsb_run250_write_95_percentile_latency
+        YCSB:+99%+Write+Latency|ycsb_run250_write_99_percentile_latency"
+
+        gen_csv_row $csv_report_name "$FIELD_MAP"
+        ;;  
+
+    ReadIntensiveLoad)
+
+      FIELD_MAP="
+        Workload|option_workload_description
+        Database|test_database
+        Test+Case|test_id
+        Database+Instance+Type|test_name
+
+        Threads|ycsb_run250_threads
+        Run+Time+(ms)|ycsb_run250_runtime_milliseconds
+
+        YCSB:+Throughput+(ops/sec)|ycsb_run250_throughput_ops_per_second
+
+        YCSB:+Average+Read+Latency|ycsb_run250_read_avg_latency
+        YCSB:+Min+Read+Latency|ycsb_run250_read_min_latency
+        YCSB:+Max+Read+Latency|ycsb_run250_read_max_latency
+        YCSB:+95%+Read+Latency|ycsb_run250_read_95_percentile_latency
+        YCSB:+99%+Read+Latency|ycsb_run250_read_99_percentile_latency"
+
+        gen_csv_row $csv_report_name "$FIELD_MAP"
+        ;;  
+
+    WriteIntensiveLoad)
+  
+        FIELD_MAP="
+        Workload|option_workload_description
+        Database|test_database
+        Test+Case|test_id
+        Database+Instance+Type|test_name
+
+        Threads|ycsb_run250_threads
+        Run+Time+(ms)|ycsb_run250_runtime_milliseconds
+
+        YCSB:+Throughput+(ops/sec)|ycsb_run250_throughput_ops_per_second
+
+        YCSB:+Average+Write+Latency|ycsb_run250_write_avg_latency
+        YCSB:+Min+Write+Latency|ycsb_run250_write_min_latency
+        YCSB:+Max+Write+Latency|ycsb_run250_write_max_latency
+        YCSB:+95%+Write+Latency|ycsb_run250_write_95_percentile_latency
+        YCSB:+99%+Write+Latency|ycsb_run250_write_99_percentile_latency"
+  
+        gen_csv_row $csv_report_name "$FIELD_MAP"
+        ;;  
+
+     *)  
+        ;;  
+
+  esac
+
+done
